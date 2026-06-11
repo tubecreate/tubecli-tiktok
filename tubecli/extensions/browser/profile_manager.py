@@ -1,0 +1,389 @@
+"""
+Browser Profile Manager
+Folder-based profile system with config.json per profile.
+Ported from python-video-studio browser-laucher/web_manager.
+"""
+import os
+import json
+import shutil
+import requests
+from datetime import datetime
+from typing import List, Optional, Dict, Any
+from tubecli.config import DATA_DIR, EXTENSIONS_DATA_DIR
+
+PROFILES_DIR = os.path.join(EXTENSIONS_DATA_DIR, "browser", "browser_profiles")
+
+
+def extract_raw_key(json_str, key):
+    import re
+    pattern = rf'"{re.escape(key)}"\s*:'
+    match = re.search(pattern, json_str)
+    if not match:
+        return None
+    start_idx = match.end()
+    while start_idx < len(json_str) and json_str[start_idx].isspace():
+        start_idx += 1
+    
+    brace_count = 0
+    in_string = False
+    escape = False
+    
+    for i in range(start_idx, len(json_str)):
+        char = json_str[i]
+        if escape:
+            escape = False
+            continue
+        if char == '\\':
+            escape = True
+            continue
+        if char == '"':
+            in_string = not in_string
+            continue
+        if not in_string:
+            if char in ('{', '['):
+                brace_count += 1
+            elif char in ('}', ']'):
+                brace_count -= 1
+                if brace_count == 0:
+                    return json_str[start_idx:i+1]
+            elif brace_count == 0 and char in (',', '}'):
+                return json_str[start_idx:i]
+    return None
+
+
+def ensure_profiles_dir():
+    os.makedirs(PROFILES_DIR, exist_ok=True)
+
+
+def list_profiles() -> List[Dict[str, Any]]:
+    """List all browser profiles with metadata."""
+    ensure_profiles_dir()
+    profiles = []
+    for name in os.listdir(PROFILES_DIR):
+        profile_path = os.path.join(PROFILES_DIR, name)
+        if os.path.isdir(profile_path):
+            config = _load_config(name)
+            profiles.append({
+                "name": name,
+                "created_at": config.get("created_at", ""),
+                "tags": config.get("tags", []),
+                "proxy": config.get("proxy", ""),
+                "browser_version": config.get("browser_version", "latest"),
+                "chrome_version": config.get("chrome_version", ""),
+                "window_size": config.get("window_size", {"width": 1920, "height": 1080}),
+                "notes": config.get("notes", ""),
+                "has_cookies": os.path.exists(os.path.join(profile_path, "cookies.json")),
+                "has_fingerprint": os.path.exists(os.path.join(profile_path, "fingerprint.json")),
+                "google_account": config.get("google_account", None),
+                "facebook_account": config.get("facebook_account", None),
+                "tiktok_account": config.get("tiktok_account", None),
+                "x_account": config.get("x_account", None),
+                "discord_account": config.get("discord_account", None),
+                "telegram_account": config.get("telegram_account", None),
+            })
+    # Sort newest first
+    profiles.sort(key=lambda p: p.get("created_at", ""), reverse=True)
+    return profiles
+
+
+def resolve_default_browser_version() -> str:
+    """Resolve 'default' or 'latest' to the actual latest installed browser engine version."""
+    try:
+        ext_dir = os.path.dirname(__file__)
+        script_dir = os.path.join(ext_dir, "data", "script")
+        if os.path.isdir(script_dir):
+            dirs = [d for d in os.listdir(script_dir) if os.path.isdir(os.path.join(script_dir, d))]
+            import re
+            ver_dirs = [d for d in dirs if re.match(r'^\d+\.\d+\.\d+$', d)]
+            if ver_dirs:
+                # Sort versions descending
+                try:
+                    ver_dirs.sort(key=lambda s: list(map(int, s.split('.'))), reverse=True)
+                except Exception:
+                    pass
+                
+                latest_bas = ver_dirs[0]
+                # Map BAS version to Chromium version
+                ENGINE_MAP = {
+                    '30.1.0': '148.0.7778.97',
+                    '30.0.0': '147.0.7727.56',
+                    '29.9.2': '146.0.7680.80',
+                    '29.8.1': '145.0.7632.46',
+                    '29.7.0': '144.0.7559.60',
+                    '29.5.0': '142.0.7444.60',
+                }
+                return ENGINE_MAP.get(latest_bas, '148.0.7778.97')
+    except Exception as e:
+        print(f"[resolve_default_browser_version] Error: {e}")
+    return "148.0.7778.97"
+
+
+def create_profile(name: str, proxy: str = "", browser_version: str = "latest", tags: List[str] = None,
+                   window_size: Dict[str, int] = None, chrome_version: str = "") -> Dict[str, Any]:
+    """Create a new browser profile folder with config."""
+    ensure_profiles_dir()
+    safe_name = "".join(c for c in name if c.isalnum() or c in "_-")
+    profile_path = os.path.join(PROFILES_DIR, safe_name)
+
+    if os.path.exists(profile_path):
+        raise ValueError(f"Profile '{safe_name}' already exists")
+
+    os.makedirs(profile_path)
+
+    if browser_version in ("default", "latest"):
+        browser_version = resolve_default_browser_version()
+
+    config = {
+        "created_at": datetime.now().isoformat(),
+        "tags": tags or ["Windows", "Chrome"],
+        "proxy": proxy,
+        "browser_version": browser_version,
+        "chrome_version": chrome_version or "",
+        "window_size": window_size or {"width": 1920, "height": 1080},
+        "notes": "",
+        "blacklist": [],
+    }
+    _save_config(safe_name, config)
+    
+    # Try fetching initial fingerprint
+    get_fingerprint(safe_name)
+
+    return {"name": safe_name, **config}
+
+
+def delete_profile(name: str) -> bool:
+    """Delete a profile and its data."""
+    profile_path = os.path.join(PROFILES_DIR, name)
+    if not os.path.exists(profile_path):
+        return False
+    shutil.rmtree(profile_path)
+    return True
+
+
+def get_profile(name: str) -> Optional[Dict[str, Any]]:
+    """Get a single profile's config."""
+    profile_path = os.path.join(PROFILES_DIR, name)
+    if not os.path.isdir(profile_path):
+        return None
+    config = _load_config(name)
+    # Check fingerprint existence
+    fp_path = os.path.join(profile_path, "fingerprint.json")
+    has_fp = os.path.isfile(fp_path) and os.path.getsize(fp_path) > 100
+    # Check cookies — from cookies.json OR Chrome SQLite DB
+    cookie_count = 0
+    cookie_path = os.path.join(profile_path, "cookies.json")
+    if os.path.isfile(cookie_path):
+        try:
+            import json as _json
+            with open(cookie_path, "r", encoding="utf-8") as f:
+                c = _json.load(f)
+            cookie_count = len(c) if isinstance(c, list) else 0
+        except Exception:
+            pass
+    # Also check Chrome's native cookie DB (in both main and _bas profiles)
+    if cookie_count == 0:
+        for sub in ["", "_bas"]:
+            chrome_cookie_db = os.path.join(PROFILES_DIR, name + sub, "Default", "Network", "Cookies")
+            if os.path.isfile(chrome_cookie_db):
+                db_size = os.path.getsize(chrome_cookie_db)
+                if db_size > 20480:  # Empty DB is ~20KB, cookies add size
+                    # Try to read via sqlite3 (works when browser is closed)
+                    try:
+                        import sqlite3
+                        conn = sqlite3.connect(chrome_cookie_db, timeout=0.05)
+                        count = conn.execute("SELECT COUNT(*) FROM cookies").fetchone()[0]
+                        conn.close()
+                        if count > 0:
+                            cookie_count = count
+                            break
+                    except Exception:
+                        # Browser is running, estimate from file size
+                        cookie_count = max(1, (db_size - 20480) // 200)
+                        break
+    return {"name": name, "has_fingerprint": has_fp, "cookie_count": cookie_count, **config}
+
+
+def update_profile(name: str, **kwargs) -> Optional[Dict[str, Any]]:
+    """Update profile config fields."""
+    profile_path = os.path.join(PROFILES_DIR, name)
+    if not os.path.isdir(profile_path):
+        return None
+    config = _load_config(name)
+    if "browser_version" in kwargs and kwargs["browser_version"] in ("default", "latest"):
+        kwargs["browser_version"] = resolve_default_browser_version()
+    for key in ("tags", "proxy", "browser_version", "chrome_version", "window_size", "notes", "blacklist", "google_account", "facebook_account", "tiktok_account", "x_account", "discord_account", "telegram_account"):
+        if key in kwargs and kwargs[key] is not None:
+            config[key] = kwargs[key]
+    _save_config(name, config)
+    return {"name": name, **config}
+
+
+def bulk_set_proxy(names: List[str], proxy: str) -> List[Dict]:
+    """Set proxy for multiple profiles at once."""
+    results = []
+    for name in names:
+        if update_profile(name, proxy=proxy):
+            results.append({"name": name, "status": "updated"})
+        else:
+            results.append({"name": name, "status": "not_found"})
+    return results
+
+
+def get_fingerprint(name: str) -> Optional[dict]:
+    """Get the fingerprint for a profile, fetching from API if missing/invalid."""
+    profile_path = os.path.join(PROFILES_DIR, name)
+    if not os.path.isdir(profile_path):
+        return None
+
+    fp_path = os.path.join(profile_path, "fingerprint_saved.json")
+    legacy_fp_path = os.path.join(profile_path, "fingerprint.json")
+    
+    # Try reading existing
+    target_path = fp_path if os.path.exists(fp_path) else legacy_fp_path
+    if os.path.exists(target_path):
+        try:
+            with open(target_path, "r", encoding="utf-8") as f:
+                fp = json.load(f)
+                if fp and isinstance(fp, dict) and len(fp) > 5:
+                    return fp
+        except Exception:
+            pass  # Fallback to fetch new
+            
+    # Fetch new from API
+    try:
+        # Read config to pass params
+        config = get_profile(name)
+        tags_param = "Microsoft Windows,Chrome"
+        min_browser_version = None
+        window_size = None
+        
+        if config:
+            browser_version = config.get("browser_version")
+            if browser_version and browser_version not in ("default", "latest"):
+                try: min_browser_version = browser_version.split('.')[0]
+                except: pass
+            
+            tags = config.get("tags")
+            if tags:
+                tag_map = {"Windows": "Microsoft Windows", "macOS": "Mac OS X"}
+                mapped_tags = [tag_map.get(t, t) for t in tags]
+                tags_param = ",".join(mapped_tags)
+                
+            window_size = config.get("window_size")
+
+        def _do_fetch(params):
+            resp = requests.get("https://api.tubecreate.com/api/fingerprints/getfinger.php", params=params, timeout=180.0)
+            resp.raise_for_status()
+            raw_text = resp.text
+            data = resp.json()
+            
+            if data and data.get("status") == "success":
+                fp_data = None
+                fp_raw_string = None
+                # New format: fingerprint inline
+                if data.get("fingerprint"):
+                    fp_data = data["fingerprint"]
+                    fp_raw_string = extract_raw_key(raw_text, "fingerprint")
+                # Old format: download via file_path
+                elif data.get("file_path"):
+                    fp_url = f"https://api.tubecreate.com/{data['file_path']}"
+                    fp_resp = requests.get(fp_url, timeout=120.0)
+                    fp_resp.raise_for_status()
+                    fp_data = fp_resp.json()
+                    fp_raw_string = fp_resp.text
+                
+                # Validate: check for {valid: false}
+                if fp_data and isinstance(fp_data, dict) and fp_data.get("valid") is False:
+                    print(f"[Fingerprint] Security Browser returned valid=false: {fp_data.get('message', '?')}")
+                    return None, None
+                    
+                return fp_data, fp_raw_string
+            return None, None
+
+        # Attempt 1: with size ranges
+        params = {"tags": tags_param}
+        if min_browser_version:
+            params["min_browser_version"] = min_browser_version
+        if window_size:
+            w, h = window_size.get("width", 1920), window_size.get("height", 1080)
+            params["min_width"] = max(w - 200, 1024)
+            params["max_width"] = w + 200
+            params["min_height"] = max(h - 200, 600)
+            params["max_height"] = h + 200
+
+        fp_data, fp_raw_string = _do_fetch(params)
+        
+        # Attempt 2: without size
+        if not fp_data and window_size:
+            print("[Fingerprint] Retrying without size constraints...")
+            params2 = {"tags": tags_param}
+            if min_browser_version:
+                params2["min_browser_version"] = min_browser_version
+            fp_data, fp_raw_string = _do_fetch(params2)
+        
+        # Attempt 3: without version
+        if not fp_data and min_browser_version:
+            print("[Fingerprint] Retrying without version constraint...")
+            fp_data, fp_raw_string = _do_fetch({"tags": tags_param})
+
+        if fp_data and fp_raw_string:
+            with open(fp_path, "w", encoding="utf-8") as f:
+                f.write(fp_raw_string)
+            with open(legacy_fp_path, "w", encoding="utf-8") as f:
+                f.write(fp_raw_string)
+            return fp_data
+            
+    except Exception as e:
+        print(f"[Fingerprint API Error] {e}")
+        
+    return None
+
+
+def reset_fingerprint(name: str) -> bool:
+    """Delete the existing fingerprint so it gets re-fetched next time."""
+    profile_path = os.path.join(PROFILES_DIR, name)
+    fp_path = os.path.join(profile_path, "fingerprint_saved.json")
+    legacy_fp_path = os.path.join(profile_path, "fingerprint.json")
+    removed = False
+    for p in (fp_path, legacy_fp_path):
+        if os.path.exists(p):
+            try:
+                os.remove(p)
+                removed = True
+            except OSError:
+                pass
+    return removed
+
+
+def refresh_fingerprint(name: str) -> Optional[dict]:
+    """Force-fetch a fresh fingerprint from API, overwriting any existing one."""
+    profile_path = os.path.join(PROFILES_DIR, name)
+    if not os.path.isdir(profile_path):
+        return None
+    fp_path = os.path.join(profile_path, "fingerprint_saved.json")
+    legacy_fp_path = os.path.join(profile_path, "fingerprint.json")
+    # Remove existing fingerprint to force fresh fetch
+    for p in (fp_path, legacy_fp_path):
+        try:
+            if os.path.exists(p):
+                os.remove(p)
+        except OSError:
+            pass
+    return get_fingerprint(name)
+
+
+def _load_config(name: str) -> dict:
+    config_path = os.path.join(PROFILES_DIR, name, "config.json")
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {"tags": ["Windows", "Chrome"], "notes": "", "blacklist": []}
+
+
+def _save_config(name: str, config: dict):
+    config_path = os.path.join(PROFILES_DIR, name, "config.json")
+    with open(config_path, "w", encoding="utf-8") as f:
+        json.dump(config, f, indent=2, ensure_ascii=False)

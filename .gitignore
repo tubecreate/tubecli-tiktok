@@ -1,0 +1,99 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+data/
+.cache/
+venv/
+.venv/
+*.log
+node_modules/
+.env
+*.zip
+
+# Local launchers (avoid pushing to git / antivirus false positives)
+TubeCLI.bat
+
+# Test/debug files rác
+test_fingerprint*.json
+test_*.py
+open_head.js
+
+# Large binaries / AI models / media / databases
+*.mp4
+*.avi
+*.mkv
+*.pt
+*.pth
+*.onnx
+*.bin
+*.db
+*.mp3
+*.wav
+
+# === BROWSER RUNTIME DATA (không cần push lên git) ===
+tubecli/extensions/browser/profiles/
+tubecli/extensions/browser/screenshots/
+tubecli/extensions/browser/scraped_data/
+tubecli/extensions/browser/script/
+/profiles/
+
+# === DEV-ONLY ONE-TIME SCRIPTS ===
+tubecli/extensions/browser/add_*.py
+tubecli/extensions/browser/fix_*.py
+tubecli/extensions/browser/insert_*.py
+tubecli/extensions/browser/cleanup_*.py
+tubecli/extensions/browser/update_context.py
+tubecli/extensions/browser/update_open.py
+tubecli/extensions/browser/update_session_manager*.py
+tubecli/extensions/browser/verify_fingerprint_config.js
+tubecli/extensions/browser/quantum_philosopher.json
+tubecli/extensions/browser/test_*.js
+tubecli/extensions/browser/test_*.py
+
+# === PROJECT ROOT SCRATCH / TEMP FILES ===
+_check_syntax.py
+check_cross_platform.py
+generate_docs.py
+scratch_*.py
+dump_*.py
+skills.json
+skills_dump.json
+*.bak
+*.tmp
+
+# Scratch folder
+scratch/
+/scratch/
+
+
+# === SCREENSHOTS / MEDIA (large, not needed in code repo) ===
+screenshots/*.webp
+screenshots/*.png
+screenshots/*.jpg
+screenshots/*.gif
+# Keep: screenshots/README.md or .txt descriptions if any
+
+# === FINGERPRINT & BROWSER CACHE (runtime data, NEVER commit) ===
+fingerprint.json
+fingerprint_*.json
+**/fingerprint.json
+**/fingerprint_*.json
+**/Safe Browsing/
+**/GrShaderCache/
+**/GPUCache/
+**/Cache/
+**/Cache_Data/
+**/CertificateRevocation/
+**/WidevineCdm/
+**/ZxcvbnData/
+**/*.dll
+**/*.store.*
+**/*.crx
+
+# === EXTENSIONS DATA (runtime, varies per user) ===
+data/extensions_external/ai_arena/

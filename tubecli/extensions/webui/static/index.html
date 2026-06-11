@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TubeCLI Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css?v=8">
+</head>
+<body>
+<div id="app">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div style="padding: 16px 16px 12px; border-bottom: 1px solid var(--border);">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div class="sidebar-logo-container" style="display:flex; align-items:center; gap: 10px;">
+                    <div style="width: 38px; height: 38px; background: rgba(82, 118, 235, 0.1); border-radius: 10px; display:flex; align-items:center; justify-content:center; border: 1px solid rgba(82, 118, 235, 0.2);">
+                        <img src="/static/logo.svg" alt="TubeCLI" style="width: 24px; height: 24px;">
+                    </div>
+                    <div style="display:flex; flex-direction:column;">
+                        <div class="sidebar-logo" style="padding:0; font-size:1.05rem; line-height:1.2; font-weight:800;">TubeCLI</div>
+                        <div class="sidebar-version" id="sidebar-version" style="padding:0; margin-top:2px; color:var(--text-muted); font-size:0.75rem;">v...</div>
+                    </div>
+                </div>
+                <button onclick="toggleSidebar()" class="sidebar-menu-btn" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.1rem; margin-top:2px; padding:0; display:flex; justify-content:center; align-items:center;"><span class="material-symbols-outlined">menu</span></button>
+            </div>
+            
+            <div class="sidebar-update" id="sidebar-update" style="display:none; flex-direction:column; gap:10px; margin:12px 0 0 0; background:rgba(82, 118, 235, 0.08); border:1px solid rgba(82, 118, 235, 0.2); border-radius:8px; padding:12px; position:relative;">
+                <button onclick="skipUpdate()" style="position:absolute; top:6px; right:6px; background:none; border:none; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:2px; border-radius:4px; transition:all 0.15s;" title="Skip this version" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.color='#fff';" onmouseout="this.style.background='none';this.style.color='var(--text-muted)';">
+                    <span class="material-symbols-outlined" style="font-size:14px;">close</span>
+                </button>
+                <div class="update-info" style="color:var(--accent, #5276eb); font-size:0.75rem; font-weight:700; display:flex; align-items:center; gap:6px; margin:0; padding-right:16px;">
+                    <span class="material-symbols-outlined" style="font-size:16px;">system_update_alt</span>
+                    <span id="update-text">New version available</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button class="btn-update-now" id="btn-update-now" onclick="performUpdate()" style="background:var(--accent, #5276eb); color:#fff; border:none; padding:6px 14px; border-radius:6px; font-weight:600; font-size:0.75rem; cursor:pointer; box-shadow:0 2px 8px rgba(82, 118, 235, 0.3); transition:all 0.2s;" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 12px rgba(82, 118, 235, 0.4)';" onmouseout="this.style.transform='none'; this.style.boxShadow='0 2px 8px rgba(82, 118, 235, 0.3)';">Update now</button>
+                </div>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section-label" data-i18n="nav.main">MAIN</div>
+            <button class="nav-item active" data-tab="dashboard"><span class="material-symbols-outlined">dashboard</span> <span class="nav-text" data-i18n="nav.dashboard">Dashboard</span></button>
+            <button class="nav-item" data-tab="extensions" id="nav-extensions"><span class="material-symbols-outlined">extension</span> <span class="nav-text" data-i18n="nav.extensions">Extensions</span><span id="ext-update-badge" style="display:none;background:#ef4444;color:#fff;font-size:0.65rem;font-weight:700;min-width:18px;height:18px;line-height:18px;text-align:center;border-radius:9px;margin-left:auto;padding:0 5px;animation:pulse 2s infinite"></span></button>
+            <button class="nav-item" data-tab="api-manager"><span class="material-symbols-outlined">api</span> <span class="nav-text" data-i18n="nav.api_manager">API Manager</span></button>
+            <button class="nav-item" data-tab="ext-auth-manager"><span class="material-symbols-outlined">lock</span> <span class="nav-text" data-i18n="nav.auth_manager">Auth Manager</span></button>
+            <button class="nav-item" data-tab="ext-cloud-keys"><span class="material-symbols-outlined">cloud</span> <span class="nav-text" data-i18n="nav.cloud_keys">Cloud API Keys</span></button>
+            <button class="nav-item" data-tab="ext-market"><span class="material-symbols-outlined">storefront</span> <span class="nav-text" data-i18n="nav.marketplace">Marketplace</span></button>
+            <button class="nav-item" data-tab="settings"><span class="material-symbols-outlined">settings</span> <span class="nav-text" data-i18n="nav.settings">Settings</span></button>
+
+            <div class="nav-section-label" style="margin-top:16px">EXTENSIONS</div>
+            <!-- Always-visible core ext -->
+            <button class="nav-item" data-tab="ext-agents"><span class="material-symbols-outlined">smart_toy</span> <span class="nav-text" data-i18n="nav.agents">Manage Agents</span></button>
+            <button class="nav-item" data-tab="ext-workflows"><span class="material-symbols-outlined">automation</span> <span class="nav-text">Workflow Builder</span></button>
+            <button class="nav-item" data-tab="ext-browser"><span class="material-symbols-outlined">public</span> <span class="nav-text" data-i18n="nav.browser">Browser Profiles</span></button>
+            <!-- Dynamic extension zone: buildSidebar() populates this -->
+            <div id="ext-nav-zone"></div>
+        </nav>
+        <div class="sidebar-footer" id="sidebar-footer" style="padding: 12px;">
+            <button onclick="shutdownServer()" class="btn-shutdown" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; padding:10px; background:transparent; border:1px solid rgba(239, 68, 68, 0.3); border-radius:8px; color:var(--text); font-weight:600; cursor:pointer; transition:all 0.2s;">
+                <span class="material-symbols-outlined" style="font-size:18px;">power_settings_new</span>
+                <span class="nav-text">Shutdown</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Hidden button pool: buildSidebar() moves these into ext-nav-zone -->
+    <div id="ext-btn-pool" style="display:none">
+        <!-- Optional ext: shown only when API says enabled -->
+        <button class="nav-item" data-ext="web_crawler" data-tab="ext-web-crawler"><span class="material-symbols-outlined">travel_explore</span> <span class="nav-text">Web Crawler</span></button>
+        <button class="nav-item" data-ext="sheets_manager" data-tab="ext-sheets"><span class="material-symbols-outlined">table_chart</span> <span class="nav-text">Sheets</span></button>
+        <button class="nav-item" data-ext="calendar_manager" data-tab="ext-calendar"><span class="material-symbols-outlined">calendar_month</span> <span class="nav-text">Calendar</span></button>
+        <button class="nav-item" data-ext="douyin_downloader" data-tab="ext-douyin-downloader"><span class="material-symbols-outlined">download</span> <span class="nav-text">Douyin Downloader</span></button>
+        <button class="nav-item" data-ext="livestream" data-tab="ext-livestream"><span class="material-symbols-outlined">cast</span> <span class="nav-text">Livestream</span></button>
+        <button class="nav-item" data-ext="multi_agents" data-tab="ext-teams"><span class="material-symbols-outlined">groups</span> <span class="nav-text">Teams AI</span></button>
+        <button class="nav-item" data-ext="video_editor" data-tab="ext-video-editor"><span class="material-symbols-outlined">video_settings</span> <span class="nav-text">Video Editor</span></button>
+        <button class="nav-item" data-ext="video_editor" data-tab="ext-video-processing"><span class="material-symbols-outlined">auto_fix_high</span> <span class="nav-text">AI Background</span></button>
+        <button class="nav-item" data-ext="video_manager" data-tab="ext-video-manager"><span class="material-symbols-outlined">video_library</span> <span class="nav-text">Video Manager</span></button>
+        <button class="nav-item" data-ext="subtitle_extractor" data-tab="ext-subtitle-extractor"><span class="material-symbols-outlined">subtitles</span> <span class="nav-text">Subtitle Extractor</span></button>
+        <button class="nav-item" data-ext="ai_arena" data-tab="ext-ai-arena"><span class="material-symbols-outlined">sports_esports</span> <span class="nav-text">AI Arena</span></button>
+        <!-- Static ext: always shown, also groupable -->
+        <button class="nav-item" data-ext="story_engine" data-ext-static="true" data-tab="ext-story"><span class="material-symbols-outlined">movie</span> <span class="nav-text">Story Engine</span></button>
+        <button class="nav-item" data-ext="studio_3d" data-ext-static="true" data-tab="ext-studio"><span class="material-symbols-outlined">palette</span> <span class="nav-text">3D Studio</span></button>
+        <button class="nav-item" data-ext="content_tracker" data-ext-static="true" data-tab="ext-tracker"><span class="material-symbols-outlined">monitoring</span> <span class="nav-text">Content Tracker</span></button>
+        <button class="nav-item" data-ext="file_browser" data-ext-static="true" data-tab="ext-file-manager"><span class="material-symbols-outlined">folder</span> <span class="nav-text">Files</span></button>
+        <button class="nav-item" data-ext="worldseed" data-tab="ext-worldseed"><span class="material-symbols-outlined">science</span> <span class="nav-text">WorldSeed AI</span></button>
+    </div>
+
+    <!-- Main Content -->
+    <main class="content" style="position: relative;">
+
+        <!-- ═══ DASHBOARD TAB (Stats Only) ═══ -->
+        <section class="tab-panel active" id="tab-dashboard">
+            <div class="panel-header"><h1 data-i18n="dash.title"><span class="material-symbols-outlined" style="vertical-align:middle;margin-right:8px">dashboard</span> Dashboard</h1></div>
+
+            <!-- System Stats -->
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-icon"><span class="material-symbols-outlined">smart_toy</span></div><div class="stat-info"><div id="stat-agents" class="stat-value">-</div><div class="stat-label" data-i18n="stat.agents">Agents</div></div></div>
+                <div class="stat-card"><div class="stat-icon"><span class="material-symbols-outlined">public</span></div><div class="stat-info"><div id="stat-profiles" class="stat-value">-</div><div class="stat-label" data-i18n="stat.profiles">Browser Profiles</div></div></div>
+                <div class="stat-card"><div class="stat-icon"><span class="material-symbols-outlined">bolt</span></div><div class="stat-info"><div id="stat-skills" class="stat-value">-</div><div class="stat-label" data-i18n="stat.skills">Skills</div></div></div>
+                <div class="stat-card"><div class="stat-icon"><span class="material-symbols-outlined">sync</span></div><div class="stat-info"><div id="stat-workflows" class="stat-value">-</div><div class="stat-label" data-i18n="stat.workflows">Workflows</div></div></div>
+                <div class="stat-card"><div class="stat-icon"><span class="material-symbols-outlined">extension</span></div><div class="stat-info"><div id="stat-extensions" class="stat-value">-</div><div class="stat-label" data-i18n="stat.extensions">Extensions</div></div></div>
+                <div class="stat-card"><div class="stat-icon"><span class="material-symbols-outlined">key</span></div><div class="stat-info"><div id="stat-api-keys" class="stat-value">-</div><div class="stat-label" data-i18n="stat.api_keys">API Keys</div></div></div>
+            </div>
+
+            <!-- System Status -->
+            <h3 style="margin-bottom: 16px; color: var(--text2);" data-i18n="dash.system_status">🟢 System Status</h3>
+            <div class="status-cards-grid">
+                <div class="status-mini-card"><span class="status-mini-icon" id="status-api-dot">●</span><span>API Server</span><span class="tag green" id="status-api-label" data-i18n="status.online">Online</span></div>
+                <div class="status-mini-card"><span class="status-mini-icon" id="status-ollama-dot">●</span><span>Ollama</span><span class="tag" id="status-ollama-label" data-i18n="status.checking">Checking...</span></div>
+                <div class="status-mini-card"><span class="status-mini-icon" id="status-browser-dot">●</span><span>Browser</span><span class="tag" id="status-browser-label" data-i18n="status.checking">Checking...</span></div>
+                <div class="status-mini-card"><span class="status-mini-icon" id="status-9router-dot">●</span><span>9Router</span><span class="tag" id="status-9router-label" data-i18n="status.checking">Checking...</span></div>
+            </div>
+
+            <h3 style="margin: 28px 0 16px; color: var(--text2);" data-i18n="dash.quick_actions"><span class="material-symbols-outlined" style="vertical-align:middle;margin-right:4px;font-size:18px">push_pin</span> Quick Actions</h3>
+            <div class="quick-action-grid">
+                <div class="quick-action-card" onclick="navigateTo('extensions'); setTimeout(()=>openExtDetail('agents'), 200)" data-i18n="dash.manage_agents"><span class="material-symbols-outlined">smart_toy</span> Manage Agents</div>
+                <div class="quick-action-card" onclick="navigateTo('extensions'); setTimeout(()=>openExtDetail('browser'), 200)" data-i18n="dash.browser_profiles"><span class="material-symbols-outlined">public</span> Browser Profiles</div>
+                <div class="quick-action-card" onclick="navigateTo('extensions'); setTimeout(()=>openExtDetail('workflows'), 200)" data-i18n="dash.workflow_builder"><span class="material-symbols-outlined">sync</span> Workflow Builder</div>
+                <div class="quick-action-card" onclick="navigateTo('extensions'); setTimeout(()=>openExtDetail('cloud_api'), 200)" data-i18n="dash.cloud_api_keys"><span class="material-symbols-outlined">cloud</span> Cloud API Keys</div>
+                <div class="quick-action-card ext-conditional" data-ext="multi_agents" onclick="navigateTo('ext-teams')" style="display:none"><span class="material-symbols-outlined">groups</span> Teams AI</div>
+                <div class="quick-action-card" onclick="navigateTo('ext-story')"><span class="material-symbols-outlined">movie</span> Story Engine</div>
+                <div class="quick-action-card ext-conditional" data-ext="video_editor" onclick="navigateTo('ext-video-editor')" style="display:none"><span class="material-symbols-outlined">video_settings</span> Video Editor</div>
+                <div class="quick-action-card ext-conditional" data-ext="video_manager" onclick="navigateTo('ext-video-manager')" style="display:none"><span class="material-symbols-outlined">video_library</span> Video Manager</div>
+                <div class="quick-action-card ext-conditional" data-ext="subtitle_extractor" onclick="navigateTo('ext-subtitle-extractor')" style="display:none"><span class="material-symbols-outlined">subtitles</span> Subtitle Extractor</div>
+                <div class="quick-action-card" onclick="navigateTo('ext-studio')"><span class="material-symbols-outlined">palette</span> 3D Studio</div>
+                <div class="quick-action-card" onclick="navigateTo('ext-pipeline-monitor')"><span class="material-symbols-outlined">monitoring</span> Pipeline Monitor</div>
+                <div class="quick-action-card ext-conditional" data-ext="sheets_manager" onclick="navigateTo('ext-sheets')" style="display:none"><span class="material-symbols-outlined">table_chart</span> Sheets Manager</div>
+                <div class="quick-action-card ext-conditional" data-ext="livestream" onclick="navigateTo('ext-livestream')" style="display:none"><span class="material-symbols-outlined">cast</span> Livestream</div>
+                <div class="quick-action-card ext-conditional" data-ext="douyin_downloader" onclick="navigateTo('ext-douyin-downloader')" style="display:none"><span class="material-symbols-outlined">download</span> Douyin Downloader</div>
+                <div class="quick-action-card ext-conditional" data-ext="web_crawler" onclick="navigateTo('ext-web-crawler')" style="display:none"><span class="material-symbols-outlined">travel_explore</span> Web Crawler</div>
+                <div class="quick-action-card ext-conditional" data-ext="ai_arena" onclick="navigateTo('ext-ai-arena')" style="display:none"><span class="material-symbols-outlined">sports_esports</span> AI Arena</div>
+            </div>
+        </section>
+
+        <!-- ═══ EXTENSION IFRAME PANELS ═══ -->
+        <section class="tab-panel" id="tab-ext-market">
+            <div class="iframe-container"><iframe data-src="/market?v=1" class="ext-iframe"></iframe></div>
+        </section>
+        <section class="tab-panel" id="tab-ext-web-crawler">
+            <div class="iframe-container"><iframe data-src="/web_crawler" class="ext-iframe"></iframe></div>
+        </section>
+        <section class="tab-panel" id="tab-ext-sheets">
+            <div class="iframe-container"><iframe data-src="/sheets_manager" class="ext-iframe"></iframe></div>
+        </section>
+        <section class="tab-panel" id="tab-ext-calendar">
+            <div class="panel-header"><h1>📅 Calendar Manager</h1></div>
+            <div id="calendar-ext-body"></div>
+        </section>
+        <section class="tab-panel" id="tab-ext-agents">
+            <div class="panel-header"><h1>🤖 Manage Agents</h1></div>
+            <div id="agents-ext-body"></div>
+        </section>
+        <section class="tab-panel" id="tab-ext-browser">
+            <div class="panel-header"><h1 data-i18n="browser.profiles_title">🌐 Browser Profiles</h1></div>
+            <div id="browser-ext-body"></div>
+        </section>
+        <section class="tab-panel" id="tab-ext-cloud-keys">
+            <div class="panel-header"><h1>☁️ Cloud API Keys</h1></div>
+            <div id="cloud-keys-ext-body" style="padding: 20px;"></div>
+        </section>
+        <section class="tab-panel" id="tab-ext-douyin-downloader">
+            <div class="iframe-container"><iframe data-src="/downloader" class="ext-iframe"></iframe></div>
+        </section>
+        <section class="tab-panel" id="tab-ext-video-downloader">
+            <div class="iframe-container"><iframe data-src="/video-downloader" class="ext-iframe"></iframe></div>
+        </section>
+        <section class="tab-panel" id="tab-ext-livestream">
+            <div class="iframe-container"><iframe data-src="/livestream" class="ext-iframe"></iframe></div>
+        </section>
+        <section class="tab-panel" id="tab-ext-teams">
+            <div class="iframe-container"><iframe data-src="/teams?v=1001" class="ext-iframe"></iframe></div>
+        </section>
+        <section class="tab-panel" id="tab-ext-story">
+            <div class="iframe-container"><iframe data-src="/story" class="ext-iframe"></iframe></div>
+        </section>
+        <section class="tab-panel" id="tab-ext-video-editor">
+            <div class="iframe-container"><iframe data-src="/video-editor" class="ext-iframe"></iframe></div>
+        </section>
+        <section class="tab-panel" id="tab-ext-studio">
+            <div class="iframe-container"><iframe data-src="/studio" class="ext-iframe"></iframe></div>
+        </section>
+        <section class="tab-panel" id="tab-ext-video-processing">
+            <div class="iframe-container"><iframe data-src="/video/processing" class="ext-iframe"></iframe></div>
+        </section>
+        <section class="tab-panel" id="tab-ext-tracker">
+            <div class="iframe-container"><iframe data-src="/tracker" class="ext-iframe"></iframe></div>
+        </section>
+        <section class="tab-panel" id="tab-ext-file-manager">
+            <div class="iframe-container"><iframe data-src="/file-manager" class="ext-iframe"></iframe></div>
+        </section>
+        <section class="tab-panel" id="tab-ext-video-manager">
+            <div class="iframe-container"><iframe data-src="/video_manager" class="ext-iframe"></iframe></div>
+        </section>
+        <section class="tab-panel" id="tab-ext-subtitle-extractor">
+            <div class="iframe-container"><iframe data-src="/subtitle-extractor" class="ext-iframe"></iframe></div>
+        </section>
+        <section class="tab-panel" id="tab-ext-auth-manager">
+            <div class="iframe-container"><iframe data-src="/auth-manager" class="ext-iframe"></iframe></div>
+        </section>
+        <section class="tab-panel" id="tab-ext-workflows">
+            <div class="iframe-container"><iframe data-src="/workflow" class="ext-iframe"></iframe></div>
+        </section>
+        <section class="tab-panel" id="tab-ext-pipeline-monitor">
+            <div class="iframe-container"><iframe data-src="/pipeline-monitor?v=1003" class="ext-iframe"></iframe></div>
+        </section>
+        <section class="tab-panel" id="tab-ext-ai-arena">
+            <div class="iframe-container"><iframe data-src="/ai-arena" class="ext-iframe"></iframe></div>
+        </section>
+        <section class="tab-panel" id="tab-ext-worldseed">
+            <div class="iframe-container"><iframe data-src="/worldseed" class="ext-iframe"></iframe></div>
+        </section>
+
+        <!-- ═══ EXTENSIONS TAB ═══ -->
+        <section class="tab-panel" id="tab-extensions">
+            <div class="panel-header">
+                <h1 data-i18n="ext.title">🧩 Extensions</h1>
+                <button class="btn-primary" onclick="showInstallExtension()" data-i18n="ext.install_git">+ Install from Git</button>
+            </div>
+            <p style="color: var(--text-muted); margin-bottom: 20px;" data-i18n="ext.click_hint">Click on an extension to open its management interface.</p>
+            <div id="extensions-grid" class="cards-grid"></div>
+        </section>
+
+        <!-- ═══ Extension Detail Overlay ═══ -->
+        <div id="ext-detail-overlay" class="ext-detail-overlay hidden">
+            <div class="ext-detail-header">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <button class="btn-back" onclick="closeExtDetail()" data-i18n="ext.back">← Back to Extensions</button>
+                    <h2 id="ext-detail-title">Extension</h2>
+                </div>
+                <div id="ext-detail-url-container" style="font-size: 0.88rem;"></div>
+            </div>
+            <div id="ext-detail-body" class="ext-detail-body"></div>
+        </div>
+
+        <!-- ═══ API MANAGER TAB ═══ -->
+        <section class="tab-panel" id="tab-api-manager">
+            <div class="panel-header">
+                <h1>🔌 API Manager</h1>
+            </div>
+
+            <!-- Server info -->
+            <div class="api-info-bar">
+                <span>🟢 Server: <b style="color:var(--green)">Running</b></span>
+                <span>🔗 <code id="api-base-display"></code></span>
+                <span>📖 <a href="/api/v1/docs" target="_blank" style="color:var(--cyan);">Swagger</a></span>
+                <span>📚 <a href="/api/v1/redoc" target="_blank" style="color:var(--purple);">ReDoc</a></span>
+            </div>
+
+            <!-- Search -->
+            <div style="margin:16px 0;">
+                <input id="api-search" type="text" class="input" placeholder="🔍 Tìm API endpoint... (VD: agents, download, skills)" oninput="filterApiEndpoints()" style="width:100%;max-width:500px;">
+            </div>
+
+            <!-- Endpoints grouped -->
+            <div id="api-endpoints-list"></div>
+        </section>
+
+        <!-- ═══ SETTINGS TAB ═══ -->
+        <section class="tab-panel" id="tab-settings">
+            <div class="panel-header">
+                <h1 data-i18n="settings.title"><span class="material-symbols-outlined" style="vertical-align:middle;margin-right:8px">settings</span> Settings</h1>
+            </div>
+
+            <!-- Version & Update — Full Width -->
+            <div class="settings-card full-width" style="margin-bottom:20px;">
+                <div class="settings-card-header">
+                    <div class="settings-card-icon blue"><span class="material-symbols-outlined" style="font-size:18px">update</span></div>
+                    <div><h3>Version & Update</h3><small>Check for updates and manage versions</small></div>
+                </div>
+                <div class="version-card" id="version-card">
+                    <div class="version-info">
+                        <div class="version-badge-row">
+                            <span class="version-badge" id="version-badge">⚡ TubeCLI v...</span>
+                            <span class="version-hash" id="version-hash"></span>
+                            <span class="version-branch" id="version-branch"></span>
+                        </div>
+                        <div id="update-status" class="update-status"></div>
+                    </div>
+                    <div class="version-actions">
+                        <button class="btn-secondary" id="btn-check-update" onclick="checkForUpdate()">🔍 Check for Update</button>
+                        <button class="btn-primary btn-update" id="btn-system-update" onclick="performSystemUpdate()" style="display:none;">⬆️ Update Now</button>
+                    </div>
+                </div>
+                <div id="changelog-box" class="changelog-box" style="display:none;">
+                    <h4>📋 Changelog</h4>
+                    <ul id="changelog-list"></ul>
+                </div>
+            </div>
+
+            <!-- Settings Grid -->
+            <div class="settings-grid">
+
+                <!-- ⚙️ General Card -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div class="settings-card-icon green"><span class="material-symbols-outlined" style="font-size:18px">tune</span></div>
+                        <div><h3 data-i18n="settings.general">General</h3><small>Core system configuration</small></div>
+                    </div>
+                    <div class="settings-field">
+                        <label data-i18n="settings.api_port">API Port</label>
+                        <input id="set-port" value="5295" onchange="autoSaveSetting('api_port', this.value, this)">
+                        <div class="field-hint">Default: 5295. Requires restart.</div>
+                    </div>
+                    <div class="settings-field">
+                        <label data-i18n="settings.api_base">API Base URL</label>
+                        <input id="set-api" value="" onchange="autoSaveSetting('api_base_url', this.value, this)">
+                    </div>
+                    <div class="settings-field">
+                        <label data-i18n="settings.ext_open_mode">Extension Open Mode</label>
+                        <select id="set-ext-open-mode" onchange="autoSaveSetting('ext_open_mode', this.value, this); setTimeout(() => location.reload(), 400);">
+                            <option value="full_page" data-i18n="settings.ext_open_mode_new_tab">Open in new tab (Default)</option>
+                            <option value="dashboard" data-i18n="settings.ext_open_mode_iframe">Embed in dashboard (Iframe)</option>
+                        </select>
+                        <div class="field-hint" data-i18n="settings.ext_open_mode_hint">How extensions open from the sidebar menu.</div>
+                    </div>
+                    <div class="settings-field" style="display:flex; justify-content:space-between; align-items:center; margin-top:16px;">
+                        <div style="flex:1; padding-right:12px;">
+                            <label data-i18n="settings.ext_update_notify" style="margin-bottom:2px;">Extension Update Notifications</label>
+                            <div class="field-hint" data-i18n="settings.ext_update_notify_hint">Show update badges and banners for extensions</div>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="set-ext-update-notify" onchange="autoSaveSetting('ext_update_notifications', this.checked, this)">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 🤖 AI Configuration Card -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div class="settings-card-icon purple"><span class="material-symbols-outlined" style="font-size:18px">smart_toy</span></div>
+                        <div><h3>AI Configuration</h3><small>Model & API keys</small></div>
+                    </div>
+                    <div class="settings-field">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 6px;">
+                            <label data-i18n="settings.ai_model_default" style="margin:0;">Default AI Model</label>
+                            <button class="btn-secondary" onclick="openModal('modal-cloud-keys')" style="font-size: 0.72rem; padding: 2px 8px; border-radius: 4px; background: rgba(139,92,246,0.1); border-color: rgba(139,92,246,0.3); color: #c4b5fd;" data-i18n="settings.manage_keys">🔑 API Keys</button>
+                        </div>
+                        <!-- Provider Filter -->
+                        <div id="provider-filter" style="display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
+                            <button class="ext-chip active" data-provider="all" onclick="filterModelsByProvider('all', this)">All</button>
+                            <button class="ext-chip" data-provider="ollama" onclick="filterModelsByProvider('ollama', this)">🖥️ Ollama</button>
+                            <button class="ext-chip" data-provider="gemini" onclick="filterModelsByProvider('gemini', this)">✨ Gemini</button>
+                            <button class="ext-chip" data-provider="openai" onclick="filterModelsByProvider('openai', this)">🤖 OpenAI</button>
+                            <button class="ext-chip" data-provider="deepseek" onclick="filterModelsByProvider('deepseek', this)">🔮 DeepSeek</button>
+                            <button class="ext-chip" data-provider="claude" onclick="filterModelsByProvider('claude', this)">🧠 Claude</button>
+                            <button class="ext-chip" data-provider="grok" onclick="filterModelsByProvider('grok', this)">⚡ Grok</button>
+                            <button class="ext-chip" data-provider="9router" onclick="filterModelsByProvider('9router', this)">🔀 9Router</button>
+                        </div>
+                        <div style="display:flex; gap: 8px;">
+                            <select id="set-model" onchange="onModelSelectChange(); autoSaveSetting('default_model', this.value, this)" style="flex:1;">
+                                <option value="" disabled selected>⏳ Đang tải cấu hình...</option>
+                            </select>
+                            <button class="btn-secondary" id="btn-test-default-ai" onclick="testDefaultAI()" style="padding: 0 14px; border-radius: 8px; white-space: nowrap; font-size:0.82rem;">⚡ Test</button>
+                        </div>
+                        <div id="test-default-ai-result" style="display:none; margin-top:8px; padding:8px 12px; border-radius:6px; font-size:0.82rem;"></div>
+                        <div id="model-key-warning" style="display:none;margin-top:8px;padding:10px 14px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;font-size:.82rem;color:#f59e0b;"></div>
+                        <div class="field-hint" data-i18n="settings.model_desc">Default model for chat, browser AI, and system tasks</div>
+                    </div>
+                </div>
+
+                <!-- 🌐 Language & Browser Card -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div class="settings-card-icon cyan"><span class="material-symbols-outlined" style="font-size:18px">language</span></div>
+                        <div><h3>Language & Browser</h3><small>Localization & default profile</small></div>
+                    </div>
+                    <div class="settings-field">
+                        <label data-i18n="settings.language">🌐 Language</label>
+                        <select id="set-lang" onchange="changeLanguage(this.value)">
+                            <option value="en">English</option>
+                            <option value="zh">中文 (简体)</option>
+                            <option value="zh-TW">中文 (繁體)</option>
+                            <option value="vi">Tiếng Việt</option>
+                            <option value="ja">日本語</option>
+                            <option value="ko">한국어</option>
+                            <option value="es">Español</option>
+                            <option value="tr">Türkçe</option>
+                            <option value="ru">Русский</option>
+                        </select>
+                    </div>
+                    <div class="settings-field">
+                        <label data-i18n="settings.default_browser">Default Browser Profile</label>
+                        <select id="set-default-profile" onchange="changeDefaultProfile(this.value)" style="width:100%;">
+                            <option value="default">default (AI Default)</option>
+                        </select>
+                        <div class="field-hint" data-i18n="settings.browser_desc">Browser profile used by Workflows & AI Agents.</div>
+                    </div>
+                </div>
+
+                <!-- 📅 Google Calendar & Storage Card -->
+                <div class="settings-card">
+                    <div class="settings-card-header">
+                        <div class="settings-card-icon orange"><span class="material-symbols-outlined" style="font-size:18px">cloud</span></div>
+                        <div><h3 data-i18n="settings.google_integration">Google Integration</h3><small data-i18n="settings.google_integration_desc">Calendar & Storage accounts</small></div>
+                    </div>
+                    <div class="settings-field">
+                        <label data-i18n="settings.default_calendar">Default Calendar Email</label>
+                        <select id="set-default-calendar" onchange="autoSaveSetting('default_calendar_email', this.value, this)" style="width:100%;">
+                            <option value="">Not configured</option>
+                        </select>
+                        <div class="field-hint" data-i18n="settings.calendar_desc">Google account for AI to schedule events via chat commands.</div>
+                    </div>
+                    <div class="settings-field" style="margin-top: 16px;">
+                        <label data-i18n="settings.default_storage">Default Storage Email</label>
+                        <select id="set-default-storage" onchange="autoSaveSetting('default_storage_email', this.value, this)" style="width:100%;">
+                            <option value="">Not configured</option>
+                        </select>
+                        <div class="field-hint" data-i18n="settings.storage_desc">Google account used for system data storage on Google Drive.</div>
+                    </div>
+                </div>
+
+                <!-- 🧩 Extension Groups Card -->
+                <div class="settings-card full-width">
+                    <div class="settings-card-header">
+                        <div class="settings-card-icon green"><span class="material-symbols-outlined" style="font-size:18px">folder_special</span></div>
+                        <div><h3>Extension Groups</h3><small>Group extensions in the sidebar</small></div>
+                    </div>
+                    <div class="settings-field">
+                        <div style="display:flex; gap: 8px; margin-bottom: 16px; align-items:center;">
+                            <input id="set-ext-group-name" type="text" class="input" placeholder="New Group Name (e.g. Media Providers)" style="flex:1;">
+                            <div style="position:relative;">
+                                <input id="set-ext-group-icon" type="text" class="input" placeholder="Icon" autocomplete="off"
+                                    style="width:120px; padding-right:30px; cursor:pointer;"
+                                    onclick="toggleIconPicker()" readonly>
+                                <span class="material-symbols-outlined"
+                                    style="position:absolute; right:6px; top:50%; transform:translateY(-50%); font-size:18px; color:var(--text-muted); pointer-events:none;">
+                                    expand_more
+                                </span>
+                                <div id="icon-picker-dropdown" style="display:none; position:absolute; top:calc(100% + 4px); left:0; z-index:9999;
+                                    background:var(--card-bg); border:1px solid var(--border); border-radius:12px;
+                                    padding:8px; width:240px; box-shadow:0 8px 24px rgba(0,0,0,0.5);
+                                    max-height:260px; overflow-y:auto; overflow-x:hidden;">
+                                    <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:2px;" id="icon-picker-grid"></div>
+                                </div>
+                            </div>
+                            <button class="btn-primary" onclick="createExtensionGroup()">+ Add Group</button>
+                        </div>
+                        <div id="settings-ext-groups-list" style="display:flex; flex-direction:column; gap: 12px;">
+                            <!-- Dynamic groups will be rendered here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ✈️ Telegram Card — Full Width -->
+                <div class="settings-card full-width">
+                    <div class="settings-card-header">
+                        <div class="settings-card-icon blue"><span class="material-symbols-outlined" style="font-size:18px">send</span></div>
+                        <div><h3 data-i18n="settings.telegram_global">Telegram (Global)</h3><small data-i18n="settings.telegram_desc">System-wide notifications. Each Agent can have its own config.</small></div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="settings-field">
+                            <label data-i18n="settings.bot_token">🤖 Bot Token</label>
+                            <input type="password" id="set-tg-token" autocomplete="new-password" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11" onchange="autoSaveSetting('telegram_bot_token', this.value, this)">
+                        </div>
+                        <div class="settings-field">
+                            <label data-i18n="settings.chat_id">💬 Chat ID</label>
+                            <input id="set-tg-chat" autocomplete="off" placeholder="-1001234567890" onchange="autoSaveSetting('telegram_chat_id', this.value, this)">
+                            <div class="field-hint" data-i18n="settings.chat_id_hint">Get Chat ID: send message to bot → open https://api.telegram.org/bot{TOKEN}/getUpdates</div>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:8px;margin-top:12px;align-items:center;">
+                        <button class="btn-secondary" id="btn-test-tg" onclick="testTelegramConnection()" style="padding:8px 20px;" data-i18n="settings.test_connection">
+                            📡 Test Connection
+                        </button>
+                        <div id="tg-test-result" style="flex:1;font-size:.82rem;color:var(--text-muted);"></div>
+                    </div>
+                </div>
+
+            </div><!-- /settings-grid -->
+        </section>
+    </main>
+</div>
+
+<!-- ═══ SHARED MODALS (outside main content) ═══ -->
+
+<!-- Install Extension Modal -->
+<div id="modal-install-ext" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header"><h2>📦 Install Extension from Git</h2><button class="btn-close" onclick="closeModal('modal-install-ext')">✕</button></div>
+        <div class="form-group" style="margin-top: 15px;"><label>Git Repository URL</label><input id="install-ext-url" placeholder="https://github.com/user/tubecli-extension-xxx.git"></div>
+        <div id="install-ext-terminal" style="display:none;background:#0a0a0f;border:1px solid #2a2a4a;border-radius:8px;padding:12px;margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:0.82rem;color:#00ff00;max-height:180px;overflow-y:auto;"></div>
+        <div class="modal-actions"><button class="btn-secondary" onclick="closeModal('modal-install-ext')">Cancel</button><button class="btn-primary" id="btn-install-ext" onclick="installExtension()">🚀 Install</button></div>
+    </div>
+</div>
+
+<!-- Create/Edit Agent Modal -->
+<div id="modal-agent" class="modal hidden">
+    <div class="modal-content modal-lg">
+        <div class="modal-header"><h2 id="agent-modal-title">Create Agent</h2><button class="btn-close" onclick="closeModal('modal-agent')">✕</button></div>
+        <div class="agent-tabs-container">
+            <div class="agent-tabs-nav">
+                <button class="agent-tab-btn active" data-atab="identity">👤 Identity</button>
+                <button class="agent-tab-btn" data-atab="behavior">🧠 Behavior</button>
+                <button class="agent-tab-btn" data-atab="browser">🌐 Browser</button>
+                <button class="agent-tab-btn" data-atab="schedule">⏰ Schedule</button>
+                <button class="agent-tab-btn" data-atab="history">📜 History</button>
+                <button class="agent-tab-btn" data-atab="skills">⚡ Skills</button>
+                <button class="agent-tab-btn" data-atab="telegram">✈️ Telegram</button>
+                <button class="agent-tab-btn" data-atab="messenger">💬 Messenger</button>
+            </div>
+            <div class="agent-tabs-content">
+                <div class="agent-tab-pane active" id="atab-identity">
+                    <h3>Identity & Options</h3>
+                    <input type="hidden" id="agent-id">
+                    <div class="form-group"><label>Agent Name</label><input id="agent-name" placeholder="Agent Name"></div>
+                    <div class="form-group"><label>Description</label><input id="agent-desc" placeholder="Agent Description"></div>
+                    <div class="form-group"><label>System Prompt</label><textarea id="agent-prompt" rows="4" placeholder="You are a helpful AI assistant."></textarea></div>
+                    <!-- Chatbot Model Selector -->
+                    <div class="form-group">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                            <label data-i18n="agent_modal.chatbot_model" style="margin:0">Chatbot Model</label>
+                            <span style="font-size:0.75rem;color:var(--text-muted)" data-i18n="agent_modal.model_default_hint">Default from Global Settings</span>
+                        </div>
+                        <div id="agent-model-provider-filter" style="display:flex;gap:5px;margin-bottom:6px;flex-wrap:wrap">
+                            <button class="ext-chip active" data-amtype="chatbot" data-amprov="all" onclick="agentModelFilter('chatbot','all',this)" data-i18n="agent_modal.filter_all">All</button>
+                            <button class="ext-chip" data-amtype="chatbot" data-amprov="ollama" onclick="agentModelFilter('chatbot','ollama',this)">🖥️ Ollama</button>
+                            <button class="ext-chip" data-amtype="chatbot" data-amprov="cloud" onclick="agentModelFilter('chatbot','cloud',this)" data-i18n="agent_modal.filter_cloud">☁️ Cloud</button>
+                            <button class="ext-chip" data-amtype="chatbot" data-amprov="9router" onclick="agentModelFilter('chatbot','9router',this)">🔀 9Router</button>
+                        </div>
+                        <select id="agent-model" onchange="onAgentModelChange('chatbot')" style="width:100%">
+                            <option value="" disabled selected>⏳ Loading...</option>
+                        </select>
+                        <div id="agent-model-warning" style="display:none;margin-top:6px;padding:8px 12px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;font-size:.8rem;color:#f59e0b"></div>
+                    </div>
+                    <!-- Browser Model Selector -->
+                    <div class="form-group">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                            <label data-i18n="agent_modal.browser_model" style="margin:0">Browser Model</label>
+                        </div>
+                        <div id="agent-browser-model-provider-filter" style="display:flex;gap:5px;margin-bottom:6px;flex-wrap:wrap">
+                            <button class="ext-chip active" data-amtype="browser" data-amprov="all" onclick="agentModelFilter('browser','all',this)" data-i18n="agent_modal.filter_all">All</button>
+                            <button class="ext-chip" data-amtype="browser" data-amprov="ollama" onclick="agentModelFilter('browser','ollama',this)">🖥️ Ollama</button>
+                            <button class="ext-chip" data-amtype="browser" data-amprov="cloud" onclick="agentModelFilter('browser','cloud',this)" data-i18n="agent_modal.filter_cloud">☁️ Cloud</button>
+                            <button class="ext-chip" data-amtype="browser" data-amprov="9router" onclick="agentModelFilter('browser','9router',this)">🔀 9Router</button>
+                        </div>
+                        <select id="agent-browser-model" onchange="onAgentModelChange('browser')" style="width:100%">
+                            <option value="" disabled selected>⏳ Loading...</option>
+                        </select>
+                        <div id="agent-browser-model-warning" style="display:none;margin-top:6px;padding:8px 12px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:8px;font-size:.8rem;color:#f59e0b"></div>
+                    </div>
+
+                    <div class="form-row"><div class="form-group"><label>Avatar Type</label><select id="agent-avatar-type"><option value="bot">Bot</option><option value="human">Human</option></select></div><div class="form-group"><label>Avatar Color</label><select id="agent-avatar-color"><option value="blue">Blue</option><option value="red">Red</option><option value="green">Green</option></select></div></div>
+                </div>
+                <div class="agent-tab-pane" id="atab-behavior"><h3>Behavior & Keywords</h3><div class="form-group"><label>Keywords & Interests</label><input id="agent-interests" placeholder="AI, Technology, Automation"></div><div class="form-group"><label>Advanced Behavior (JSON)</label><textarea id="agent-behavior" rows="12" placeholder='{"dailyRoutine": [], "workHabits": {}}'></textarea></div></div>
+                <div class="agent-tab-pane" id="atab-browser"><h3>Browser & Proxy</h3><div class="form-group"><label>Proxy Mode</label><select id="agent-proxy-mode" onchange="onProxyModeChange()"><option value="none">🚫 None</option><option value="static">📌 Static IP</option><option value="dynamic">🔄 Dynamic API</option></select></div><div id="proxy-static-group" style="display:none"><div class="form-group"><label>Static Proxy URL</label><input id="agent-proxy" placeholder="socks5://user:pass@host:port"></div></div><div id="proxy-dynamic-group" style="display:none"><div class="form-group"><label>Provider API URL</label><input id="agent-proxy-api" placeholder="https://tmproxy.com/api/proxy/get-new-proxy"></div><div class="form-row"><div class="form-group"><label>API Key</label><input id="agent-proxy-api-key"></div><div class="form-group"><label>Location</label><input id="agent-proxy-location" placeholder="hanoi"></div></div></div><hr style="border:none;border-top:1px solid var(--border);margin:20px 0"><h4>Allowed Browser Profiles</h4><div id="agent-profiles-list" class="checkbox-list" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;padding:10px"><p class="text-muted">Loading...</p></div></div>
+                <div class="agent-tab-pane" id="atab-schedule"><h3>Automated Schedule</h3><div class="custom-control-flex"><label>Enable Scheduling</label><input type="checkbox" id="agent-schedule-enable"></div><div class="form-row"><div class="form-group"><label>Timezone</label><input id="agent-timezone" value="Asia/Ho_Chi_Minh"></div><div class="form-group"><label>Repeat</label><select id="agent-schedule-repeat"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="interval">Every X min</option></select></div></div><div class="form-group" id="schedule-interval-group" style="display:none"><label>Interval (min)</label><input type="number" id="agent-schedule-interval" value="60" min="1"></div><div id="schedule-days-group"><label style="font-weight:600;display:block;margin-bottom:8px">Active Days</label><div style="display:flex;gap:8px;flex-wrap:wrap"><label class="day-check"><input type="checkbox" value="mon" class="agent-day-cb" checked> Mon</label><label class="day-check"><input type="checkbox" value="tue" class="agent-day-cb" checked> Tue</label><label class="day-check"><input type="checkbox" value="wed" class="agent-day-cb" checked> Wed</label><label class="day-check"><input type="checkbox" value="thu" class="agent-day-cb" checked> Thu</label><label class="day-check"><input type="checkbox" value="fri" class="agent-day-cb" checked> Fri</label><label class="day-check"><input type="checkbox" value="sat" class="agent-day-cb"> Sat</label><label class="day-check"><input type="checkbox" value="sun" class="agent-day-cb"> Sun</label></div></div><div class="form-row" style="margin-top:16px"><div class="form-group"><label>Start</label><input type="time" id="agent-schedule-start" value="08:00"></div><div class="form-group"><label>End</label><input type="time" id="agent-schedule-end" value="22:00"></div></div><div class="form-group"><label>Max Runs/Day</label><input type="number" id="agent-schedule-max-runs" value="10" min="1"></div></div>
+                <div class="agent-tab-pane" id="atab-history"><h3>Scraper & History</h3><div class="custom-control-flex"><label>Enable Auto-Scraping</label><input type="checkbox" id="agent-scraping-enable"></div><div class="form-row"><div class="form-group"><label>Max Text (chars)</label><input type="number" id="agent-scraper-limit" value="10000"></div><div class="form-group"><label>Format</label><select id="agent-scraper-format"><option value="json">JSON</option><option value="txt">TXT</option><option value="srt">SRT</option></select></div></div></div>
+                <div class="agent-tab-pane" id="atab-skills">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                        <h3 style="margin:0">Allowed Skills</h3>
+                        <span id="agent-skills-count" style="font-size:.8rem;color:var(--text-muted)">0 selected</span>
+                    </div>
+                    <input id="agent-skills-search" placeholder="🔍 Search skills..." style="width:100%;margin-bottom:12px;padding:7px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.85rem" oninput="filterSkillChips(this.value)">
+                    <div id="agent-skills-list" style="display:flex;flex-wrap:wrap;gap:8px;min-height:60px;padding:4px 0">
+                        <p class="text-muted">Loading...</p>
+                    </div>
+                </div>
+                <div class="agent-tab-pane" id="atab-telegram"><h3>Telegram Bot</h3><div class="form-group"><label>Bot Token</label><input type="password" id="agent-tg-token" autocomplete="new-password"></div><div class="form-group"><label>Chat ID</label><input id="agent-tg-chat" autocomplete="off"></div></div>
+                <div class="agent-tab-pane" id="atab-messenger"><h3>Messenger</h3><div class="form-group"><label>Page Access Token</label><input type="password" id="agent-ms-token" autocomplete="new-password"></div><div class="form-group"><label>Page ID</label><input id="agent-ms-page" autocomplete="off"></div><div class="form-group"><label>Webhook URL</label><input id="agent-ms-php" autocomplete="off"></div><div class="form-group"><label>Direct Trigger Skill</label><input id="agent-ms-skill" autocomplete="off"></div></div>
+            </div>
+        </div>
+        <div class="modal-actions"><button class="btn-secondary" onclick="closeModal('modal-agent')">Cancel</button><button class="btn-primary" onclick="saveAgent()">Save Agent</button></div>
+    </div>
+</div>
+
+<!-- Generate Agent with AI Modal -->
+<div id="modal-generate-agent" class="modal hidden">
+    <div class="modal-content modal-lg" style="height:90vh">
+        <div class="modal-header"><h2>⚡ Generate Agent with AI</h2><button class="btn-close" onclick="closeModal('modal-generate-agent')">✕</button></div>
+        <div style="flex:1;overflow-y:auto;padding-top:16px">
+            <div class="form-row"><div class="form-group"><label>Agent Name</label><input id="agent-gen-name" placeholder="e.g. Tech Support Agent"></div><div class="form-group"><label>Tag Prefix</label><input id="agent-gen-prefix" placeholder="ev_tech"></div></div>
+            <div class="form-group"><label>Description</label><textarea id="agent-gen-desc" rows="3" placeholder="A support agent who helps..."></textarea></div>
+            <div class="form-row"><div class="form-group"><label>AI Provider</label><select id="agent-gen-provider" onchange="onGenProviderChange()"><option value="ollama">🖥️ Ollama</option><option value="gemini">✨ Gemini</option><option value="chatgpt">🤖 ChatGPT</option><option value="claude">🧠 Claude</option><option value="grok">⚡ Grok</option><option value="deepseek">🔮 DeepSeek</option><option value="openrouter">🌐 OpenRouter</option><option value="9router">🔀 9Router</option></select></div><div class="form-group"><label>Model</label><select id="agent-gen-model"></select></div></div>
+            <div class="form-group" id="agent-gen-apikey-group" style="display:none"><label>API Key</label><input type="password" id="agent-gen-apikey" autocomplete="new-password"></div>
+            <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
+            <div class="form-group"><label style="color:var(--purple)">🔑 Google Accounts (tab-separated)</label><textarea id="agent-gen-accounts" rows="3" style="font-family:'JetBrains Mono',monospace;font-size:.8rem;background:var(--bg2);color:#90ee90"></textarea><div style="display:flex;justify-content:space-between;font-size:.8rem;color:var(--text-muted);margin-top:4px"><span id="agent-gen-acc-count">0 accounts</span><span>1 account = 1 profile</span></div></div>
+            <div class="form-group"><label style="color:var(--cyan)">📄 Preview</label><textarea id="agent-gen-preview" rows="8" style="font-family:'JetBrains Mono',monospace;font-size:.8rem" readonly></textarea><div id="agent-gen-status" style="margin-top:8px;font-size:.85rem;font-weight:600"></div></div>
+        </div>
+        <div class="modal-actions"><button class="btn-secondary" onclick="closeModal('modal-generate-agent')">Close</button><button class="btn-primary" id="btn-generate-ai" onclick="generateAgentJSON()">⚡ Generate</button><button class="btn-primary" id="btn-apply-ai" style="background:linear-gradient(135deg,var(--green),#10b981);display:none" onclick="applyGeneratedAgent()">🚀 Apply</button></div>
+    </div>
+</div>
+
+<!-- Chat Modal -->
+<div id="modal-chat" class="modal hidden">
+    <div class="modal-content modal-lg" style="height:80vh;display:flex;flex-direction:column">
+        <div class="modal-header"><h2>💬 Chat with <span id="chat-agent-name">Agent</span></h2><button class="btn-close" onclick="closeModal('modal-chat')">✕</button></div>
+        <div id="chat-history" style="flex:1;overflow-y:auto;padding:16px;background:var(--bg2);border-radius:6px;display:flex;flex-direction:column;gap:12px;margin-bottom:16px"><p class="text-muted" style="text-align:center">Loading...</p></div>
+        <div style="display:flex;gap:10px"><input type="text" id="chat-input" placeholder="Type a message..." style="flex:1;padding:12px;border-radius:6px;border:1px solid var(--border)" onkeypress="if(event.key==='Enter')sendChatMessage()"><button class="btn-primary" onclick="sendChatMessage()" style="padding:0 24px">Send</button></div>
+    </div>
+</div>
+
+<!-- Create Browser Profile Modal -->
+<div id="modal-profile" class="modal hidden">
+    <div class="modal-content">
+        <h2 data-i18n="browser.create_profile">Create Profile</h2>
+        <div class="form-group"><label data-i18n="form.name">Name</label><input id="profile-name" placeholder="profile_name"></div>
+        <div class="form-group"><label data-i18n="form.proxy">Proxy</label><input id="profile-proxy" placeholder="socks5://user:pass@host:port"></div>
+        <div class="form-row">
+            <div class="form-group"><label data-i18n="form.os">OS</label><select id="profile-os"><option value="Windows">Windows</option><option value="Mac OS X">macOS</option><option value="Linux">Linux</option></select></div>
+            <div class="form-group"><label data-i18n="form.browser">Browser</label><select id="profile-browser"><option value="Chrome">Chrome</option><option value="Firefox">Firefox</option></select></div>
+            <div class="form-group"><label data-i18n="browser.engine_version">Browser Engine Version</label><select id="profile-version"><option value="default" data-i18n="browser.opt_default_version">Default Latest</option></select></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label data-i18n="profile.window_size">📐 Browser Window Size</label>
+                <div style="display:flex;gap:8px;align-items:center">
+                    <input id="profile-win-width" type="number" placeholder="Width" value="1920" min="800" max="3840" style="flex:1">
+                    <span style="color:var(--text-muted)">×</span>
+                    <input id="profile-win-height" type="number" placeholder="Height" value="1080" min="600" max="2160" style="flex:1">
+                    <span style="color:var(--text-muted);font-size:.8rem">px</span>
+                </div>
+                <small style="color:var(--text-muted);font-size:.75rem" data-i18n="profile.window_size_hint">Chrome window size upon startup (1600×900 or higher recommended)</small>
+            </div>
+        </div>
+        <div class="modal-actions"><button class="btn-primary" onclick="createProfile()" id="btn-create-profile-submit" data-i18n="browser.create_fetch">Create &amp; Fetch Fingerprint</button><button class="btn-secondary" onclick="closeModal('modal-profile')" data-i18n="browser.btn_cancel">Cancel</button></div>
+    </div>
+</div>
+
+<!-- Add API Key Modal -->
+<div id="modal-add-key" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header"><h2>🔑 Add API Key</h2><button class="btn-close" onclick="closeModal('modal-add-key')">✕</button></div>
+        <div class="form-group" style="margin-top:15px"><label>Provider</label><select id="add-key-provider"><option value="gemini">Google Gemini</option><option value="openai">OpenAI</option><option value="claude">Anthropic Claude</option><option value="deepseek">DeepSeek</option><option value="grok">xAI Grok</option><option value="openrouter">OpenRouter</option><option value="everai">EverAI TTS</option><option value="9router">9Router</option></select></div>
+        <div class="form-group"><label>API Key</label><input type="password" id="add-key-value" autocomplete="new-password" placeholder="Paste API key..."></div>
+        <div class="form-group"><label>Label</label><input id="add-key-label" value="default"></div>
+        <div class="modal-actions"><button class="btn-secondary" onclick="closeModal('modal-add-key')">Cancel</button><button class="btn-primary" onclick="addApiKey()">Save Key</button></div>
+    </div>
+</div>
+
+<!-- Edit AI Models Modal -->
+<div id="modal-edit-models" class="modal hidden">
+    <div class="modal-content" style="max-width:550px">
+        <div class="modal-header">
+            <h2 id="edit-models-title">⚙️ Cấu hình Models</h2>
+            <button class="btn-close" onclick="closeModal('modal-edit-models')">✕</button>
+        </div>
+        <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;margin-top:10px;max-height:70vh;overflow-y:auto;padding-right:5px">
+            <p class="text-muted" style="font-size:0.9rem;margin-bottom:0">Quản lý danh sách các AI Models hỗ trợ cho Provider này.</p>
+            <div style="display:flex;gap:8px">
+                <input type="text" id="add-model-input" placeholder="Nhập tên model (vd: gemini-2.5-pro)" autocomplete="off" onkeypress="if(event.key==='Enter') window.addModelToList()" style="flex:1">
+                <button class="btn-primary" onclick="window.addModelToList()">Thêm</button>
+            </div>
+            <div class="table-container" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;background:var(--bg-lighter);margin-top:8px;">
+                <table class="data-table">
+                    <tbody id="edit-models-list">
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Auto Test Panel -->
+            <div id="model-test-panel" style="display:none;margin-top:15px;padding-top:15px;border-top:1px solid var(--border)">
+                <h3 style="margin-bottom:10px;color:var(--cyan);font-size:1.1rem">🛠️ Auto Test: <span id="test-model-name"></span></h3>
+                <div class="form-group">
+                    <label>Prompt Template</label>
+                    <textarea id="test-model-prompt" rows="2" style="width:100%;resize:vertical" oninput="window.updateCurlPreview()">Bạn là trợ lý AI. Hãy trả lời ngắn gọn: "Test thành công!"</textarea>
+                </div>
+                <div class="form-group" style="position:relative;margin-top:8px">
+                    <label>Generated cURL Preview</label>
+                    <div style="background:var(--bg-dark);padding:10px;border-radius:4px;font-family:monospace;font-size:0.8rem;color:var(--text-muted);white-space:pre-wrap;word-break:break-all;" id="test-model-curl"></div>
+                </div>
+                <div style="display:flex;justify-content:flex-end;margin-top:10px;margin-bottom:10px">
+                    <button class="btn-primary" onclick="window.runModelTest()" id="btn-run-model-test" style="background:var(--green)">▶ Gửi Request 🚀</button>
+                </div>
+                <div class="form-group">
+                    <label>API Response</label>
+                    <div id="test-model-result" style="background:var(--bg-dark);color:var(--text);padding:10px;border-radius:4px;min-height:50px;border:1px solid var(--border);white-space:pre-wrap;font-family:monospace;font-size:0.9rem">Dữ liệu trả về sẽ hiển thị ở đây...</div>
+                </div>
+            </div>
+
+        </div>
+        <div class="modal-actions" style="margin-top:20px;">
+            <button class="btn-secondary" onclick="closeModal('modal-edit-models')">Đóng</button>
+            <button class="btn-primary" onclick="window.saveProviderModels()">Lưu danh sách</button>
+        </div>
+    </div>
+</div>
+
+<!-- Browser Engines Modal -->
+<div id="modal-engines" class="modal hidden">
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h2 data-i18n="browser.engines_title">🌐 Available Browser Engines</h2>
+            <button class="btn-close" onclick="closeModal('modal-engines')">✕</button>
+        </div>
+        <p class="text-muted" style="margin: 10px 0;" data-i18n="browser.engines_desc">Chromium engines with fingerprinting support. Install missing versions to use specific browser builds.</p>
+        <div id="engines-list-container" class="table-container" style="max-height: 400px; overflow-y: auto;">
+            <p class="text-muted" data-i18n="browser.loading_engines">Loading engines...</p>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeModal('modal-engines')" data-i18n="browser.btn_close">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Engine Required Alert Modal -->
+<div id="modal-engine-alert" class="modal hidden">
+    <div class="modal-content" style="max-width:480px;text-align:center;border:1px solid var(--purple);overflow:hidden">
+        <div style="background:linear-gradient(135deg,rgba(139,92,246,0.15),rgba(6,182,212,0.1));padding:28px 24px 20px;margin:-24px -24px 20px">
+            <div style="font-size:3rem;margin-bottom:12px;animation:pulse 2s infinite">⚙️</div>
+            <h2 style="margin:0;font-size:1.3rem;color:var(--text)" data-i18n="browser.engine_req_title">Browser Engine Required</h2>
+        </div>
+        <p style="color:var(--text-muted);font-size:0.95rem;line-height:1.6;margin-bottom:6px" data-i18n="browser.engine_req_desc">
+            You need to download at least one Browser Engine before creating a profile.
+        </p>
+        <div id="engine-alert-version" style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;margin:16px 0;display:flex;align-items:center;justify-content:center;gap:10px">
+            <span style="font-size:1.2rem">🚀</span>
+            <span style="font-size:0.9rem;color:var(--text-muted)" data-i18n="browser.latest_version">Latest Version:</span>
+            <span id="engine-alert-latest" style="font-weight:700;color:var(--green);font-size:1.05rem">...</span>
+        </div>
+        <div class="modal-actions" style="justify-content:center;gap:12px;padding-top:8px">
+            <button class="btn-secondary" onclick="closeModal('modal-engine-alert')" style="min-width:100px" data-i18n="browser.later">Later</button>
+            <button class="btn-primary" id="btn-engine-alert-download" onclick="downloadLatestEngineNow()" style="min-width:160px;background:linear-gradient(135deg,#8b5cf6,#06b6d4);font-weight:700" data-i18n="browser.download_now">
+                ⬇️ Download Now
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Download Progress Overlay -->
+<div id="download-overlay" class="loading-overlay hidden">
+    <div class="loading-content">
+        <div class="spinner"></div>
+        <h3 id="download-title" data-i18n="browser.downloading_engine">Downloading Browser Engine...</h3>
+        <p id="download-details" class="text-muted" data-i18n="browser.download_details">This may take a few minutes.</p>
+        <div class="progress-bar-container">
+            <div id="download-progress-bar" class="progress-bar" style="width: 0%"></div>
+        </div>
+        <p id="download-percent" style="font-weight: 700; margin-top: 10px;">0%</p>
+        <div style="margin-top: 20px;">
+            <button class="btn-secondary" onclick="cancelEngineDownload()" data-i18n="browser.btn_cancel">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- Browser Command Modal -->
+<div id="modal-command" class="modal hidden">
+    <div class="modal-content" style="max-width:560px">
+        <div class="modal-header">
+            <h2>🚀 Browser Command</h2>
+            <button class="btn-close" onclick="closeModal('modal-command')">✕</button>
+        </div>
+        <p style="color:var(--text-muted);margin:8px 0 4px;font-size:.9rem">
+            Profile: <strong id="cmd-profile-name" style="color:var(--cyan)"></strong>
+        </p>
+        <div class="form-group" style="margin-top:12px">
+            <label>Nhập lệnh (tự nhiên)</label>
+            <textarea id="cmd-input" class="input" rows="2" placeholder="VD: vào google tìm kiếm giá vàng hôm nay&#10;login google&#9;email@gmail.com&#9;password&#9;recovery@email.com&#9;2FA codes" style="width:100%;font-size:0.95rem;padding:12px 14px;resize:vertical;font-family:inherit" onkeydown="if(event.key==='Tab'){event.preventDefault();var s=this.selectionStart;this.value=this.value.substring(0,s)+'\t'+this.value.substring(this.selectionEnd);this.selectionStart=this.selectionEnd=s+1}if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();executeProfileCommand()}"></textarea>
+            <small style="color:var(--text-muted);font-size:.75rem">Login: dùng Tab ngăn cách các trường: login google⇥email⇥pass⇥recovery⇥2FA</small>
+        </div>
+        <div class="form-group" style="margin-top:8px">
+            <label>🤖 AI Model</label>
+            <select id="cmd-ai-model" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:0.9rem;font-family:inherit">
+                <option value="qwen:latest">Qwen (Local - Ollama)</option>
+                <option value="qwen3:latest">Qwen 3 (Local - Ollama)</option>
+                <option value="deepseek-r1:latest">DeepSeek R1 (Local - Ollama)</option>
+                <option value="llama3:latest">Llama 3 (Local - Ollama)</option>
+                <option value="gemma3:latest">Gemma 3 (Local - Ollama)</option>
+                <option value="gemini-2.0-flash">Gemini 2.0 Flash (Cloud)</option>
+                <option value="gpt-4o-mini">GPT-4o Mini (Cloud)</option>
+            </select>
+        </div>
+        <div style="margin:12px 0 16px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn-chip" onclick="setCommand('login google\temail@gmail.com\tpassword\trecovery@email.com\t2FA codes')">🔐 Login Google</button>
+            <button class="btn-chip" onclick="setCommand('vào google tìm kiếm giá vàng hôm nay')">🔍 Giá vàng</button>
+            <button class="btn-chip" onclick="setCommand('navigate to https://mail.google.com')">📧 Gmail</button>
+            <button class="btn-chip" onclick="setCommand('vào facebook.com')">📘 Facebook</button>
+            <button class="btn-chip" onclick="setCommand('search for latest tech news, then click first result, then browse 30 seconds')">📰 Đọc tin tech</button>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeModal('modal-command')">Huỷ</button>
+            <button class="btn-primary" id="btn-run-command" onclick="executeProfileCommand()" style="background:linear-gradient(135deg,#8b5cf6,#06b6d4);font-weight:700">
+                🚀 Chạy lệnh
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Skill Markdown Viewer Modal -->
+<div id="modal-skill-markdown" class="modal hidden">
+    <div class="modal-content modal-lg" style="max-width:800px; max-height: 90vh; display: flex; flex-direction: column;">
+        <div class="modal-header">
+            <h2>📄 Hướng dẫn & Cấu trúc (AI Perspective)</h2>
+            <button class="btn-close" onclick="closeModal('modal-skill-markdown')">✕</button>
+        </div>
+        <p style="color:var(--text-muted);margin:8px 0 12px;font-size:.9rem">
+            Đây là giao diện mô phỏng định dạng văn bản (schema/markdown) mà AI Agent sẽ đọc để hiểu <strong id="skill-md-name" style="color:var(--cyan)"></strong> thực hiện chức năng gì.
+        </p>
+        <div style="flex:1; overflow-y:auto; background:var(--bg-dark); border:1px solid var(--border); border-radius:8px; padding:16px;">
+            <pre id="skill-md-content" style="white-space:pre-wrap; font-family:'JetBrains Mono',monospace; font-size:.85rem; line-height:1.5; color:var(--text);"></pre>
+        </div>
+        <div class="modal-actions" style="margin-top:16px;">
+            <button class="btn-secondary" onclick="closeModal('modal-skill-markdown')">Đóng</button>
+            <button class="btn-primary" onclick="navigator.clipboard.writeText(document.getElementById('skill-md-content').textContent).then(()=>alert('Đã copy!'))">📋 Copy Schema</button>
+        </div>
+    </div>
+</div>
+
+<!-- Run Skill Modal -->
+<div id="modal-skill-run" class="modal hidden">
+    <div class="modal-content" style="max-width:600px; display: flex; flex-direction: column;">
+        <div class="modal-header">
+            <h2>▶ Chạy Kiểm Thử Skill</h2>
+            <button class="btn-close" onclick="closeModal('modal-skill-run')">✕</button>
+        </div>
+        <p style="color:var(--text-muted);margin:8px 0 16px;font-size:.9rem">
+            Thực thi trực tiếp: <strong id="skill-run-name" style="color:var(--cyan)"></strong>
+        </p>
+        <input type="hidden" id="skill-run-id">
+        <div class="form-group">
+            <label>Tham số đầu vào (Input Prompt)</label>
+            <textarea id="skill-run-input" class="input" rows="3" placeholder="Ví dụ: mô tả team hoặc từ khóa tìm kiếm... Nếu workflow không yêu cầu input thì để trống." style="width:100%;resize:vertical;font-family:inherit;padding:12px;"></textarea>
+            <small style="color:var(--text-muted);font-size:.75rem">Nội dung này sẽ được pass vào input của system prompt (hoặc node đầu tiên nếu là workflow)</small>
+        </div>
+        
+        <div id="skill-run-result-container" style="display:none; margin-top:16px;">
+            <label style="font-weight:600;display:block;margin-bottom:8px">Kết quả (JSON Response):</label>
+            <div style="background:var(--bg-dark); border:1px solid var(--border); border-radius:8px; padding:12px; max-height:250px; overflow-y:auto;">
+                <pre id="skill-run-result" style="white-space:pre-wrap; font-family:'JetBrains Mono',monospace; font-size:.85rem; color:var(--text);"></pre>
+            </div>
+        </div>
+
+        <div class="modal-actions" style="margin-top:20px;">
+            <button class="btn-secondary" onclick="closeModal('modal-skill-run')">Đóng</button>
+            <button class="btn-primary" id="btn-execute-skill" onclick="executeSkillRun()" style="background:linear-gradient(135deg,#10b981,#22c55e);font-weight:700">
+                🚀 Thực thi
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Profile Settings Modal -->
+<div id="modal-settings" class="modal hidden">
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h2><span data-i18n="browser.settings_title">Profile Settings:</span> <span id="settings-profile-name" style="color:var(--cyan)"></span></h2>
+            <button class="btn-close" onclick="closeModal('modal-settings')">✕</button>
+        </div>
+        
+        <div class="agent-tabs-container">
+            <div class="agent-tabs-nav">
+                <button class="settings-tab-btn active" data-i18n="browser.tab_general" onclick="switchSettingsTab('general', this)">🌐 General</button>
+                <button class="settings-tab-btn" data-i18n="browser.tab_accounts" onclick="switchSettingsTab('accounts', this)">🔑 Accounts</button>
+                <button class="settings-tab-btn" data-i18n="browser.tab_cookies" onclick="switchSettingsTab('cookies', this)">🍪 Cookies</button>
+            </div>
+            
+            <div class="agent-tabs-content">
+                <!-- Tab Pane 1: General Settings -->
+                <div class="settings-tab-pane active" id="settings-tab-general">
+                    <h3 data-i18n="browser.general_title">General Settings</h3>
+                    
+                    <div class="form-group">
+                        <label data-i18n="browser.proxy">🔌 Proxy</label>
+                        <input id="settings-proxy" type="text" class="input" placeholder="socks5://user:pass@host:port" style="width:100%;padding:10px 14px">
+                    </div>
+                    
+                    <div class="form-group" style="margin-top:16px">
+                        <label data-i18n="browser.fp_tags_engine">🧬 Fingerprint Tags (OS, Device) &amp; Engine</label>
+                        <div style="display:flex;gap:8px">
+                            <select id="settings-fp-os" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:.9rem">
+                                <option value="Windows">Windows</option>
+                                <option value="macOS">macOS</option>
+                                <option value="Linux">Linux</option>
+                                <option value="Android">Android</option>
+                            </select>
+                            <select id="settings-fp-browser" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:.9rem">
+                                <option value="Chrome">Chrome</option>
+                                <option value="Firefox">Firefox</option>
+                                <option value="Edge">Edge</option>
+                            </select>
+                            <select id="settings-version" style="flex:1;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:.9rem">
+                                <option value="default">Default Latest</option>
+                            </select>
+                        </div>
+                        <small data-i18n="browser.fp_hint" style="color:var(--text-muted);font-size:.75rem">OS · Browser · Browser Engine Version (Chrome build)</small>
+                    </div>
+                    
+                    <div class="form-group" style="margin-top:16px">
+                        <label data-i18n="browser.win_size">📐 Browser Window Size</label>
+                        <div style="display:flex;gap:8px;align-items:center">
+                            <input id="settings-win-width" type="number" class="input" placeholder="Width" value="1920" min="800" max="3840" style="flex:1;padding:10px 14px">
+                            <span style="color:var(--text-muted)">×</span>
+                            <input id="settings-win-height" type="number" class="input" placeholder="Height" value="1080" min="600" max="2160" style="flex:1;padding:10px 14px">
+                            <span style="color:var(--text-muted);font-size:.8rem">px</span>
+                        </div>
+                        <small data-i18n="browser.win_size_hint" style="color:var(--text-muted);font-size:.75rem">Chrome window size upon startup (1600×900 or higher recommended)</small>
+                    </div>
+                    
+                    <div class="form-group" style="margin-top:16px">
+                        <label data-i18n="browser.fp_label">🧬 Fingerprint</label>
+                        <div style="display:flex;gap:8px;align-items:center">
+                            <span id="settings-fp-status" data-i18n="browser.fp_not_loaded" style="flex:1;font-size:.85rem;color:var(--text-muted)">Not loaded</span>
+                            <button id="btn-refresh-fp" onclick="refreshFingerprint()" class="btn-secondary" data-i18n="browser.fp_refresh" style="font-size:.8rem;padding:6px 12px;white-space:nowrap">
+                                🔄 Refresh Fingerprint
+                            </button>
+                        </div>
+                        <small data-i18n="browser.fp_refresh_hint" style="color:var(--text-muted);font-size:.75rem">Fetch a fresh fingerprint from API. May take 20-30 seconds.</small>
+                    </div>
+                </div>
+                
+                <!-- Tab Pane 2: Service Accounts -->
+                <div class="settings-tab-pane" id="settings-tab-accounts">
+                    <h3 data-i18n="browser.service_accounts">Service Accounts</h3>
+                    
+                    <div class="form-group">
+                        <label style="display:flex;align-items:center;justify-content:space-between">
+                            <span data-i18n="browser.choose_service">🔐 Choose Service (Auto-Login)</span>
+                            <select id="settings-account-service" onchange="switchAccountService()" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.8rem;font-family:inherit">
+                                <option value="google" data-i18n="browser.opt_google">Google Account (Auto-Login)</option>
+                                <option value="facebook" data-i18n="browser.opt_facebook">Facebook Account</option>
+                                <option value="tiktok" data-i18n="browser.opt_tiktok">TikTok Account</option>
+                                <option value="x" data-i18n="browser.opt_x">X (Twitter) Account</option>
+                                <option value="discord" data-i18n="browser.opt_discord">Discord Account</option>
+                                <option value="telegram" data-i18n="browser.opt_telegram">Telegram Account</option>
+                            </select>
+                        </label>
+                        <textarea id="settings-account-data" class="input" rows="4" placeholder="email@gmail.com|password|recovery@email.com|2FA codes" style="width:100%;padding:10px 14px;font-size:.9rem;resize:vertical;font-family:inherit;margin-top:6px" oninput="previewActiveAccount()"></textarea>
+                        <small id="settings-account-help" data-i18n="browser.acc_hint" style="color:var(--text-muted);font-size:.75rem">Separate fields using | or Tab. Format: email/username|password|recovery|2FA</small>
+                    </div>
+                    
+                    <div class="form-group" style="margin-top:16px">
+                        <label data-i18n="browser.preview_creds">👁️ Preview Credentials</label>
+                        <div id="settings-account-preview" style="margin-top:6px;font-size:.8rem;color:var(--text-muted);display:none">
+                            <div style="background:var(--bg-secondary);border-radius:6px;padding:12px 14px;border:1px solid var(--border)">
+                                <div style="margin-bottom: 6px;"><span id="preview-lbl-email" style="font-weight:600;color:var(--text2)">📧/👤</span> <span id="preview-email" style="color:var(--cyan)"></span></div>
+                                <div style="margin-bottom: 6px;"><span id="preview-lbl-pass" style="font-weight:600;color:var(--text2)">🔑</span> <span id="preview-pass"></span></div>
+                                <div style="margin-bottom: 6px;"><span id="preview-lbl-recovery" style="font-weight:600;color:var(--text2)">📩</span> <span id="preview-recovery"></span></div>
+                                <div><span id="preview-lbl-2fa" style="font-weight:600;color:var(--text2)">🔢</span> <span id="preview-2fa"></span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tab Pane 3: Cookies Manager -->
+                <div class="settings-tab-pane" id="settings-tab-cookies">
+                    <h3 data-i18n="browser.cookies_title">Cookies Manager</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label data-i18n="browser.default_domain">🌐 Default Domain (for raw Cookie string)</label>
+                            <input id="settings-cookies-domain" value=".google.com" placeholder="VD: .google.com hoặc .facebook.com">
+                            <small data-i18n="browser.default_domain_hint" style="color:var(--text-muted);font-size:.75rem">Applied when parsing raw cookie string format (name=value)</small>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label data-i18n="browser.total_cookies">📋 Total Cookies</label>
+                            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-weight:700;color:var(--green);text-align:center;font-size:1.1rem;height:42px;display:flex;align-items:center;justify-content:center" id="settings-cookies-count">0</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-top:12px">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                            <label data-i18n="browser.cookies_data" style="margin:0">📄 Cookies Data</label>
+                            <div style="display:flex;align-items:center;gap:6px">
+                                <span data-i18n="browser.display_format" style="font-size:0.75rem;color:var(--text-muted)">Display Format:</span>
+                                <select id="settings-cookies-format" onchange="onCookieFormatChange()" style="width:130px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text);font-size:.8rem;font-family:inherit">
+                                    <option value="json" data-i18n="browser.opt_json_array">JSON Array</option>
+                                    <option value="string" data-i18n="browser.opt_cookie_string">Cookie String</option>
+                                </select>
+                            </div>
+                        </div>
+                        <textarea id="settings-cookies-data" rows="8" data-i18n-placeholder="browser.placeholder_cookies" placeholder="Supported formats:\n1. JSON Array: [{\"name\":\"key\",\"value\":\"val\",...}] (Chrome extension export)\n2. JSON Object: {\"cookies\": [...], \"url\": \"...\"}\n3. Raw String: name=value; name2=value2" style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;line-height:1.4"></textarea>
+                    </div>
+                    
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
+                        <div style="display:flex;gap:8px;flex-wrap:wrap">
+                            <button class="btn-primary" onclick="importCookies()" style="background:linear-gradient(135deg,var(--green),#10b981);display:flex;align-items:center;gap:6px">
+                                <span class="material-symbols-outlined" style="font-size:18px">download_for_offline</span> <span data-i18n="browser.import_cookies">Import Cookies</span>
+                            </button>
+                            <button class="btn-secondary" onclick="copyCookiesToClipboard()" style="display:flex;align-items:center;gap:6px;padding:10px 16px">
+                                <span class="material-symbols-outlined" style="font-size:18px">content_copy</span> <span data-i18n="browser.copy_cookies">Copy</span>
+                            </button>
+                            <button class="btn-secondary" onclick="downloadCookiesFile()" style="display:flex;align-items:center;gap:6px;padding:10px 16px">
+                                <span class="material-symbols-outlined" style="font-size:18px">download</span> <span data-i18n="browser.download_cookies">Download (JSON)</span>
+                            </button>
+                        </div>
+                        <button class="btn-danger" onclick="clearProfileCookies()" style="display:flex;align-items:center;gap:6px;padding:10px 16px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3)">
+                            <span class="material-symbols-outlined" style="font-size:18px">delete</span> <span data-i18n="browser.delete_cookies">Clear Cookies</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal-actions" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+            <button class="btn-secondary" onclick="closeModal('modal-settings')" data-i18n="browser.btn_cancel">Cancel</button>
+            <button class="btn-primary" onclick="saveProfileSettings()" style="background:linear-gradient(135deg,#f59e0b,#ef4444);font-weight:700" data-i18n="browser.btn_save">💾 Save Settings</button>
+        </div>
+    </div>
+</div>
+
+<div id="modal-cloud-keys" class="modal hidden">
+    <div class="modal-content" style="width:100%;max-width:650px">
+        <h3 style="margin-bottom:16px; color:var(--purple);">☁️ Quản lý Cloud API Keys</h3>
+        <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:16px;">Quản lý API keys cho các mô hình Cloud AI. Keys sẽ được sử dụng khi chọn model cloud ở cài đặt hệ thống.</p>
+        <div id="settings-cloud-keys-list" style="display:flex;flex-direction:column;gap:12px;max-height: 400px;overflow-y: auto;"></div>
+        <div style="margin-top:16px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--bg-secondary);padding:12px;border-radius:8px;">
+            <select id="settings-add-key-provider" style="flex:1;min-width:120px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:.85rem;">
+                <option value="gemini">✨ Gemini</option>
+                <option value="openai">🤖 OpenAI</option>
+                <option value="claude">🧠 Claude</option>
+                <option value="deepseek">🔮 DeepSeek</option>
+                <option value="grok">⚡ Grok</option>
+                <option value="openrouter">🌐 OpenRouter</option>
+                <option value="everai">🎙️ EverAI TTS</option>
+                <option value="9router">🔀 9Router</option>
+            </select>
+            <input type="password" id="settings-add-key-value" placeholder="Paste API key..." style="flex:2;min-width:150px;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:.85rem;">
+            <button class="btn-primary" onclick="addCloudKeyFromSettings()" style="flex:1;min-width:120px;padding:8px 16px;font-size:.85rem;white-space:nowrap;justify-content:center;">+ Thêm Key</button>
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-top:20px;">
+            <button class="btn-secondary" onclick="closeModal('modal-cloud-keys')" style="padding: 10px 20px;">Đóng</button>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Edit Skill Modal -->
+<div id="modal-create-skill" class="modal hidden">
+    <div class="modal-content modal-lg" style="max-width: 800px;">
+        <div class="modal-header">
+            <h2 id="skill-modal-title">✨ Tạo Skill Mới</h2>
+            <button class="btn-close" onclick="closeModal('modal-create-skill')">✕</button>
+        </div>
+        
+        <div class="agent-tabs-container" style="flex: 1; margin-top: 16px;">
+            <div class="agent-tabs-nav">
+                <button class="agent-tab-btn active" id="btn-tab-skill-manual" onclick="switchSkillCreateTab('manual')">✍️ Thủ công</button>
+                <button class="agent-tab-btn" id="btn-tab-skill-ai" onclick="switchSkillCreateTab('ai')">🤖 Tạo bằng AI</button>
+            </div>
+            
+            <div class="agent-tabs-content">
+                <!-- TAB 1: Manual Creation -->
+                <div class="agent-tab-pane active" id="tab-skill-manual">
+                    <input type="hidden" id="skill-edit-id">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                        <div class="form-group">
+                            <label>Tên Skill <span style="color:var(--red)">*</span></label>
+                            <input id="skill-name-input" type="text" class="input" placeholder="Ví dụ: 🎬 Tải Video Tiktok">
+                        </div>
+                        <div class="form-group">
+                            <label>Loại Skill</label>
+                            <select id="skill-type-select" class="input" style="width:100%; height:42px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); padding: 0 10px;" onchange="toggleManualSkillFields()">
+                                <option value="Markdown">Markdown (Prompt / SOP / Static)</option>
+                                <option value="Workflow Skill">Workflow Skill (Executable Graph)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label>Mô tả Skill</label>
+                        <input id="skill-desc-input" type="text" class="input" placeholder="Mô tả công việc skill này thực hiện cho Agent hiểu...">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label>Từ khóa kích hoạt (Triggers)</label>
+                        <input id="skill-trigger-input" type="text" class="input" placeholder="ví dụ: tai video tiktok, download douyin">
+                        <small style="color:var(--text-muted); font-size:0.75rem;">Khi người dùng chat chứa các từ khóa này, Agent sẽ tự kích hoạt skill (phân cách bằng dấu phẩy).</small>
+                    </div>
+
+                    <div class="form-group" id="group-skill-markdown" style="margin-bottom: 16px;">
+                        <label>Nội dung Logic / Hướng dẫn (SOP / Markdown Prompt)</label>
+                        <textarea id="skill-markdown-input" class="input" rows="8" placeholder="# Hướng dẫn thực hiện...\n1. Bước 1: ...\n2. Bước 2: ..." style="width:100%; font-family:var(--font-mono, monospace); padding:12px; resize:vertical; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text);"></textarea>
+                        <small style="color:var(--text-muted); font-size:0.75rem;">Ghi hướng dẫn bằng Markdown. Nếu chọn Workflow, bạn sẽ vẽ sơ đồ graph sau khi lưu.</small>
+                    </div>
+                </div>
+
+                <!-- TAB 2: AI-Powered Generation -->
+                <div class="agent-tab-pane" id="tab-skill-ai">
+                    <div class="form-group" style="margin-bottom: 16px;">
+                        <label>Yêu cầu thiết kế Skill (Prompt)</label>
+                        <textarea id="skill-ai-prompt" class="input" rows="4" placeholder="Ví dụ: 'Tự động lấy thông tin thời tiết Hà Nội và gửi mail báo cáo hàng ngày.'" style="width:100%; padding:12px; resize:vertical; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text);"></textarea>
+                        <small style="color:var(--text-muted); font-size:0.75rem;">AI sẽ phân tích các Node có sẵn trong hệ thống và SKILL.md để cấu trúc hóa skill tự động.</small>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                        <div class="form-group">
+                            <label>AI Provider</label>
+                            <select id="skill-ai-provider" class="input" style="width:100%; height:42px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); padding: 0 10px;" onchange="loadSkillAIModels()">
+                                <option value="ollama">🖥️ Ollama (Local)</option>
+                                <option value="gemini">✨ Gemini (Google)</option>
+                                <option value="chatgpt">🤖 OpenAI (ChatGPT)</option>
+                                <option value="claude">🧠 Claude (Anthropic)</option>
+                                <option value="deepseek">🔮 DeepSeek</option>
+                                <option value="grok">⚡ Grok (xAI)</option>
+                                <option value="9router">🔀 9Router</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>AI Model</label>
+                            <select id="skill-ai-model" class="input" style="width:100%; height:42px; background:var(--bg); border:1px solid var(--border); border-radius:8px; color:var(--text); padding: 0 10px;">
+                                <option value="">⏳ Đang tải model...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 20px; display: flex; justify-content: flex-end;">
+                        <button class="btn-primary" id="btn-generate-skill-ai" onclick="generateSkillWithAI()" style="background: linear-gradient(135deg, var(--purple), #8b5cf6); font-weight: 700;">
+                            🤖 Bắt đầu thiết kế với AI
+                        </button>
+                    </div>
+
+                    <!-- AI Generation Loading -->
+                    <div id="skill-ai-loading" style="display:none; text-align:center; padding: 20px; background: rgba(139,92,246,0.05); border: 1px dashed rgba(139,92,246,0.2); border-radius: 12px; margin-bottom: 20px;">
+                        <div class="spinner" style="width:30px; height:30px; border-width:3px; margin: 0 auto 12px;"></div>
+                        <div style="color:var(--text); font-weight:500;" id="skill-ai-loading-text">AI đang thiết kế cấu trúc skill... Vui lòng đợi.</div>
+                    </div>
+
+                    <!-- Preview Area -->
+                    <div id="skill-ai-preview-container" style="display:none; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 12px; padding: 16px;">
+                        <h3 style="color: var(--cyan); margin-bottom: 12px; display:flex; align-items:center; gap:6px;">
+                            <span class="material-symbols-outlined">preview</span> Kết quả thiết kế từ AI
+                        </h3>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px;">
+                            <div class="form-group">
+                                <label>Tên Skill gợi ý</label>
+                                <input id="skill-ai-name" type="text" class="input">
+                            </div>
+                            <div class="form-group">
+                                <label>Loại Skill gợi ý</label>
+                                <input id="skill-ai-type" type="text" class="input" readonly style="opacity: 0.8; background: var(--bg2);">
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label>Mô tả gợi ý</label>
+                            <input id="skill-ai-desc" type="text" class="input">
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label>Từ khóa kích hoạt gợi ý</label>
+                            <input id="skill-ai-trigger" type="text" class="input">
+                        </div>
+
+                        <div class="form-group" id="group-skill-ai-markdown" style="margin-bottom: 12px; display:none;">
+                            <label>Nội dung Markdown gợi ý</label>
+                            <textarea id="skill-ai-markdown" class="input" rows="8" style="width:100%; font-family:var(--font-mono, monospace); padding:12px; resize:vertical; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text);"></textarea>
+                        </div>
+
+                        <div id="group-skill-ai-workflow" style="margin-bottom: 12px; display:none; background:rgba(16,185,129,0.05); border:1px solid rgba(16,185,129,0.2); border-radius:8px; padding:12px;">
+                            <div style="font-weight:600; color: #10b981; display:flex; align-items:center; gap:6px; margin-bottom:4px;">
+                                <span class="material-symbols-outlined">schema</span> Đã thiết kế Workflow Graph thành công!
+                            </div>
+                            <div style="font-size:0.8rem; color:var(--text-muted);" id="skill-ai-workflow-summary">
+                                Số lượng Node: 0 | Số lượng Kết nối: 0.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px;">
+            <button class="btn-secondary" onclick="closeModal('modal-create-skill')">Đóng</button>
+            <button class="btn-primary" id="btn-save-created-skill" onclick="saveCreatedSkill()" style="background: linear-gradient(135deg, #10b981, #22c55e); font-weight:700;">
+                💾 Lưu Skill
+            </button>
+        </div>
+    </div>
+</div>
+<script src="/static/i18n.js?v=11"></script>
+<script src="/static/app.js?v=34"></script>
+<script>
+// Auto-fill API base URL from current location
+(function(){
+    var origin = window.location.origin;
+    var el1 = document.getElementById('api-base-display');
+    var el2 = document.getElementById('set-api');
+    if(el1 && !el1.textContent) el1.textContent = origin;
+    if(el2 && !el2.value) el2.value = origin;
+    
+    var extModeEl = document.getElementById('set-ext-open-mode');
+    if (extModeEl) {
+        extModeEl.value = localStorage.getItem('ext_open_mode') || 'full_page';
+    }
+    // Fetch version for sidebar badge + check for updates
+    fetch('/api/v1/version').then(r=>r.json()).then(d=>{
+        var sv = document.getElementById('sidebar-version');
+        if(sv && d.version) sv.textContent = 'v' + d.version;
+        // Check GitHub for newer version
+        fetch('/api/v1/version/check').then(r=>r.json()).then(u=>{
+            if(u.has_update) {
+                var skipped = localStorage.getItem('skipped_version');
+                var notified = sessionStorage.getItem('tubecli_update_notified');
+                if (skipped !== u.remote_version && !notified) {
+                    window._latestRemoteVersion = u.remote_version;
+                    var su = document.getElementById('sidebar-update');
+                    var ut = document.getElementById('update-text');
+                    if(su) su.style.display = 'flex';
+                    if(ut) ut.textContent = 'TubeCLI v' + u.remote_version;
+                    // Mark as notified so it only displays exactly once per browser session
+                    sessionStorage.setItem('tubecli_update_notified', 'true');
+                }
+            }
+        }).catch(()=>{});
+    }).catch(()=>{});
+})();
+
+function skipUpdate() {
+    if (window._latestRemoteVersion) {
+        localStorage.setItem('skipped_version', window._latestRemoteVersion);
+    }
+    var su = document.getElementById('sidebar-update');
+    if (su) su.style.display = 'none';
+}
+
+function performUpdate() {
+    var btn = document.getElementById('btn-update-now');
+    if(!btn) return;
+    btn.disabled = true;
+    btn.textContent = 'Updating...';
+    fetch('/api/v1/version/update', {method:'POST'})
+        .then(r=>r.json())
+        .then(d=>{
+            if(d.status === 'success') {
+                btn.textContent = '✓ Done! Restart needed';
+                btn.style.background = 'var(--green)';
+                var ut = document.getElementById('update-text');
+                if(ut) ut.textContent = 'Updated! Please restart TubeCLI';
+            } else {
+                btn.textContent = 'Error: ' + (d.output||'').slice(0,30);
+                btn.style.background = 'var(--red)';
+                setTimeout(()=>{ btn.textContent='Retry'; btn.style.background=''; btn.disabled=false; }, 3000);
+            }
+        })
+        .catch(()=>{
+            btn.textContent = 'Network error';
+            btn.style.background = 'var(--red)';
+            setTimeout(()=>{ btn.textContent='Retry'; btn.style.background=''; btn.disabled=false; }, 3000);
+        });
+}
+</script>
+</body>
+</html>
