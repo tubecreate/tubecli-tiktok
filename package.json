@@ -1,5 +1,13 @@
 {
   "dependencies": {
     "canvas": "^3.2.3"
-  },"name": "tubecli-tiktok"
+  },
+  "name": "tubecli-tiktok",
+  "devDependencies": {
+    "wrangler": "^4.99.0"
+  },
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
+  }
 }
